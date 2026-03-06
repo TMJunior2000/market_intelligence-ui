@@ -1,6 +1,6 @@
 {
-  "name": "Pragmatic Intel",
-  "short_name": "Intel",
+  "name": "Market Intelligence",
+  "short_name": "Market",
   "description": "Terminale di Market Intelligence",
   "start_url": "./index.html",
   "display": "standalone",
