@@ -9,44 +9,40 @@ const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     }
 });
 
-const DB = {
-    // Verifica lo stato della connessione
-    async checkConnection() {
-        const { data, error } = await sbClient.from('assets').select('ticker').limit(1);
-        return !error;
-    },
-
-    // Prende le card di tipo MACRO_EVENT (Ultime 50)
-    async getMacroEvents() {
+/**
+ * Recupera gli ultimi eventi macro dal DB per il caricamento iniziale.
+ */
+async function fetchLatestInsights() {
+    try {
         const { data, error } = await sbClient
             .from('market_insights')
             .select('*')
-            .eq('insight_type', 'MACRO_EVENT')
-            .order('id', { ascending: false })
-            .limit(50);
-        if (error) console.error("DB Error Macro:", error);
-        return data || [];
-    },
+            .order('created_at', { ascending: false })
+            .limit(30); // Prendiamo gli ultimi 30 per non appesantire lo Xiaomi
 
-    // Prende il cruscotto aggregato degli asset
-    async getAssetConsensus() {
+        if (error) throw error;
+        return data;
+    } catch (err) {
+        console.error("Errore DB nel recupero insights:", err.message);
+        return [];
+    }
+}
+
+/**
+ * Recupera il consenso specifico per un asset quando clicchi sul chip.
+ */
+async function getAssetConsensus(ticker) {
+    try {
         const { data, error } = await sbClient
             .from('asset_consensus')
             .select('*')
-            .order('average_confidence', { ascending: false });
-        if (error) console.error("DB Error Consensus:", error);
-        return data || [];
-    },
+            .eq('ticker', ticker)
+            .single(); // Ne vogliamo solo uno, quello dell'asset cliccato
 
-    // Prende la timeline storica di un singolo asset
-    async getAssetTimeline(ticker) {
-        const { data, error } = await sbClient
-            .from('market_insights')
-            .select('summary, sentiment_short, confidence, id')
-            .eq('asset_ticker', ticker)
-            .order('id', { ascending: false })
-            .limit(10);
-        if (error) console.error("DB Error Timeline:", error);
-        return data || [];
+        if (error) throw error;
+        return data;
+    } catch (err) {
+        console.error(`Errore DB nel recupero consenso per ${ticker}:`, err.message);
+        return null;
     }
-};
+}

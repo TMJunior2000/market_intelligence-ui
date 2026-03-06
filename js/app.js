@@ -1,109 +1,76 @@
-const APP = {
-    state: {
-        macroData: [],
-        consensusData: []
-    },
+// js/app.js
 
-    async init() {
-        this.bindEvents();
-        
-        // Check Connessione
-        const isConnected = await DB.checkConnection();
-        const indicator = document.getElementById('status-indicator');
-        if (isConnected) {
-            indicator.classList.remove('bg-red-500');
-            indicator.classList.add('bg-green-500');
-            indicator.title = "Connesso a Supabase";
-        }
-
-        // Carica dati iniziali (Macro)
-        this.loadMacro();
-    },
-
-    bindEvents() {
-        // Navigazione Bottom Bar
-        const tabs = ['macro', 'assets', 'filters'];
-        tabs.forEach(tab => {
-            document.getElementById(`nav-${tab}`).addEventListener('click', () => {
-                this.switchTab(tab);
-            });
-        });
-
-        // Chiusura Modale
-        document.getElementById('close-modal').addEventListener('click', () => {
-            document.getElementById('asset-modal').classList.add('hidden');
-        });
-
-        // Listener per il filtro Confidenza
-        document.getElementById('filter-confidence').addEventListener('change', (e) => {
-            if (this.state.consensusData.length > 0) {
-                let filtered = e.target.checked 
-                    ? this.state.consensusData.filter(item => item.average_confidence >= 7)
-                    : this.state.consensusData;
-                UI.renderConsensus(filtered);
-            }
-        });
-    },
-
-    switchTab(activeTab) {
-        // Aggiorna UI Bottoni
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.classList.remove('text-blue-400');
-            btn.classList.add('text-gray-500');
-        });
-        document.getElementById(`nav-${activeTab}`).classList.add('text-blue-400');
-        document.getElementById(`nav-${activeTab}`).classList.remove('text-gray-500');
-
-        // Mostra/Nasconde Sezioni
-        ['macro', 'assets', 'filters'].forEach(tab => {
-            document.getElementById(`view-${tab}`).classList.add('hidden');
-        });
-        document.getElementById(`view-${activeTab}`).classList.remove('hidden');
-
-        // Carica Dati Lazy Load
-        if (activeTab === 'macro' && this.state.macroData.length === 0) this.loadMacro();
-        if (activeTab === 'assets' && this.state.consensusData.length === 0) this.loadConsensus();
-    },
-
-    async loadMacro() {
-        this.state.macroData = await DB.getMacroEvents();
-        UI.renderMacro(this.state.macroData);
-    },
-
-    async loadConsensus() {
-        this.state.consensusData = await DB.getAssetConsensus();
-        UI.renderConsensus(this.state.consensusData);
-    },
-
-    // Funzione chiamata al click su un Ticker nella schermata Asset
-    async openAssetModal(ticker) {
-        // Trova i dati del consenso in memoria
-        const consensus = this.state.consensusData.find(item => item.ticker === ticker);
-        
-        // Popola la UI della Modale
-        document.getElementById('modal-ticker').textContent = ticker;
-        document.getElementById('modal-summary').textContent = consensus.executive_summary || "Riassunto AI in elaborazione...";
-        
-        document.getElementById('modal-short').textContent = consensus.consensus_short || "-";
-        document.getElementById('modal-short').className = `font-bold text-sm ${UI.getColor(consensus.consensus_short)}`;
-        
-        document.getElementById('modal-medium').textContent = consensus.consensus_medium || "-";
-        document.getElementById('modal-medium').className = `font-bold text-sm ${UI.getColor(consensus.consensus_medium)}`;
-        
-        document.getElementById('modal-long').textContent = consensus.consensus_long || "-";
-        document.getElementById('modal-long').className = `font-bold text-sm ${UI.getColor(consensus.consensus_long)}`;
-
-        // Apri la Modale
-        document.getElementById('asset-modal').classList.remove('hidden');
-
-        // Carica asincronamente la timeline
-        document.getElementById('modal-timeline').innerHTML = '<p class="text-xs text-gray-500">Caricamento storico...</p>';
-        const timelineData = await DB.getAssetTimeline(ticker);
-        UI.renderModalTimeline(timelineData);
-    }
-};
-
-// Avvia l'app quando il DOM è pronto
+// Aspettiamo che il documento sia pronto
 document.addEventListener('DOMContentLoaded', () => {
-    APP.init();
+    
+    // --- 1. GESTIONE INTERFACCIA (MOVIMENTI) ---
+    
+    const btnFilters = document.getElementById('btn-toggle-filters');
+    const btnCloseFilters = document.getElementById('btn-close-filters');
+    const sidebar = document.getElementById('sidebar-filters');
+    
+    const btnClosePanel = document.getElementById('btn-close-panel');
+    const assetPanel = document.getElementById('asset-control-panel');
+    
+    const overlay = document.getElementById('overlay');
+
+    // Apri Filtri
+    btnFilters.addEventListener('click', () => {
+        sidebar.classList.add('open');
+        overlay.classList.remove('hidden');
+    });
+
+    // Chiudi Filtri
+    const closeAll = () => {
+        sidebar.classList.remove('open');
+        assetPanel.classList.remove('open');
+        overlay.classList.add('hidden');
+    };
+
+    btnCloseFilters.addEventListener('click', closeAll);
+    btnClosePanel.addEventListener('click', closeAll);
+    overlay.addEventListener('click', closeAll);
+
+
+    // --- 2. LOGICA REAL-TIME (SUPABASE) ---
+
+    // Funzione per inizializzare l'ascolto dei nuovi dati
+    const initRealtime = async () => {
+        // Supponiamo che la tabella si chiami 'market_insights'
+        const channel = supabase
+            .channel('schema-db-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT', // Ascolta solo quando vengono aggiunte nuove righe
+                    schema: 'public',
+                    table: 'market_insights'
+                },
+                (payload) => {
+                    console.log('Nuovo dato ricevuto!', payload.new);
+                    // Diciamo a ui.js di disegnare la nuova card in cima al feed
+                    if (typeof renderCard === 'function') {
+                        renderCard(payload.new, true); 
+                    }
+                }
+            )
+            .subscribe();
+    };
+
+    // Primo caricamento dati storici all'avvio
+    const loadInitialData = async () => {
+        try {
+            // Chiamiamo la funzione che scriveremo in db.js
+            const data = await fetchLatestInsights();
+            if (data && typeof renderFeed === 'function') {
+                renderFeed(data);
+            }
+        } catch (error) {
+            console.error("Errore caricamento iniziale:", error);
+        }
+    };
+
+    // Avvio
+    loadInitialData();
+    initRealtime();
 });
