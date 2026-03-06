@@ -1,57 +1,42 @@
-document.addEventListener('DOMContentLoaded', () => {
-    
-    // --- 1. UI INTERACTIVE ---
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log("1. App avviata: DOM pronto"); //
+
+    // --- Inizializzazione UI ---
     const btnFilters = document.getElementById('btn-toggle-filters');
-    const btnCloseFilters = document.getElementById('btn-close-filters');
     const sidebar = document.getElementById('sidebar-filters');
-    const btnClosePanel = document.getElementById('btn-close-panel');
-    const assetPanel = document.getElementById('asset-control-panel');
     const overlay = document.getElementById('overlay');
+    const statusIndicator = document.getElementById('status-indicator');
 
-    const closeAll = () => {
-        sidebar.classList.remove('open');
-        assetPanel.classList.remove('open');
-        overlay.classList.add('hidden');
-    };
+    if (btnFilters) {
+        btnFilters.onclick = () => {
+            sidebar.classList.add('open');
+            overlay.classList.remove('hidden');
+        };
+    }
 
-    btnFilters?.addEventListener('click', () => {
-        sidebar.classList.add('open');
-        overlay.classList.remove('hidden');
-    });
-
-    btnCloseFilters?.addEventListener('click', closeAll);
-    btnClosePanel?.addEventListener('click', closeAll);
-    overlay?.addEventListener('click', closeAll);
-
-    // --- 2. SUPABASE REAL-TIME ---
-    const initRealtime = () => {
-        // Usiamo sbClient invece di supabase
-        const channel = sbClient
-            .channel('market-changes')
-            .on(
-                'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'market_insights' },
-                (payload) => {
-                    console.log('Nuovo segnale ricevuto:', payload.new);
-                    // Ricarichiamo il feed per applicare il clustering correttamente
-                    loadInitialData();
-                }
-            )
-            .subscribe();
-    };
-
-    // --- 3. DATA LOADING ---
-    const loadInitialData = async () => {
-        const statusIndicator = document.getElementById('status-indicator');
-        const data = await fetchLatestInsights();
+    // --- Caricamento Dati ---
+    console.log("2. Tentativo di caricamento dati iniziali..."); //
+    try {
+        const data = await fetchLatestInsights(); // Funzione in db.js
+        console.log("3. Dati ricevuti dal DB:", data); //
         
-        if (data) {
-            UI.renderFeed(data);
-            statusIndicator.classList.replace('bg-red-500', 'bg-emerald-500');
-            statusIndicator.title = "Connesso";
+        if (data && data.length > 0) {
+            UI.renderFeed(data); // Funzione in ui.js
+            statusIndicator.style.backgroundColor = '#10b981'; // Verde
+        } else {
+            console.warn("4. Il DB è tornato vuoto o non ci sono tabelle"); //
         }
-    };
+    } catch (e) {
+        console.error("ERRORE CRITICO AVVIO:", e); //
+    }
 
-    loadInitialData();
-    initRealtime();
+    // --- Attivazione Real-time ---
+    if (typeof sbClient !== 'undefined') {
+        console.log("5. Inizializzazione Real-time..."); //
+        sbClient.channel('market-changes')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'market_insights' }, (payload) => {
+                console.log("6. NUOVO DATO REAL-TIME!", payload.new); //
+                location.reload(); // Per ora ricarichiamo per sicurezza
+            }).subscribe();
+    }
 });
