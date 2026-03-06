@@ -1,90 +1,94 @@
 const UI = {
-    // Helper per i colori dei semafori
+    // Helper per i colori del sentiment
     getColor(sentiment) {
         if (!sentiment) return 'text-gray-500';
-        if (sentiment.includes('BULLISH')) return 'text-green-400';
-        if (sentiment.includes('BEARISH')) return 'text-red-400';
+        const s = sentiment.toUpperCase();
+        if (s.includes('BULLISH')) return 'text-emerald-400';
+        if (s.includes('BEARISH')) return 'text-red-400';
         return 'text-gray-400';
     },
 
-    // Raggruppa e renderizza le MACRO CARD
-    renderMacro(data) {
-        const container = document.getElementById('macro-container');
+    // Svuota il feed
+    clearFeed() {
+        document.getElementById('feed-container').innerHTML = '';
+    },
+
+    // Renderizza il feed con clustering per eventi macro
+    renderFeed(data) {
+        const container = document.getElementById('feed-container');
         container.innerHTML = '';
-        
-        if(data.length === 0) {
-            container.innerHTML = '<p class="text-center text-gray-500">Nessun evento macro recente.</p>';
+
+        if (!data || data.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-500 mt-10 text-sm">In attesa di segnali Macro...</p>';
             return;
         }
 
-        // Clustering: Raggruppa per feed_id e title
+        // Clustering: Raggruppiamo per 'summary' o 'title' per unire gli asset influenzati
         const clusters = {};
         data.forEach(item => {
-            const key = item.feed_id + item.title;
+            const key = item.summary || item.title;
             if (!clusters[key]) {
-                clusters[key] = { title: item.title, summary: item.summary, assets: [] };
+                clusters[key] = { 
+                    title: item.title, 
+                    summary: item.summary, 
+                    type: item.insight_type,
+                    assets: [] 
+                };
             }
-            clusters[key].assets.push({ ticker: item.asset_ticker, sentiment: item.sentiment_short });
+            if (item.asset_ticker) {
+                clusters[key].assets.push({ 
+                    ticker: item.asset_ticker, 
+                    sentiment: item.sentiment_short 
+                });
+            }
         });
 
-        // Disegna i Cluster
+        // Disegna le card
         Object.values(clusters).forEach(cluster => {
-            let chipsHtml = cluster.assets.map(a => 
-                `<span class="text-xs px-2 py-1 rounded bg-gray-700 border border-gray-600 ${this.getColor(a.sentiment)} font-bold">
-                    ${a.ticker}
-                </span>`
-            ).join('');
+            const isMacro = cluster.type === 'MACRO_EVENT';
+            const borderColor = isMacro ? 'border-purple-500/30' : 'border-blue-500/30';
+            const badgeLabel = isMacro ? 'MACRO' : 'ANALYSIS';
+            const badgeColor = isMacro ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400';
+
+            const chipsHtml = cluster.assets.map(a => `
+                <button onclick="UI.openAssetPanel('${a.ticker}')" 
+                        class="bg-gray-700 hover:bg-gray-600 text-[10px] px-2 py-1 rounded border border-gray-600 font-bold transition-colors ${this.getColor(a.sentiment)}">
+                    ${a.ticker} ${a.sentiment === 'BULLISH' ? '↑' : a.sentiment === 'BEARISH' ? '↓' : '•'}
+                </button>
+            `).join('');
 
             const html = `
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-sm">
-                    <h3 class="font-bold text-md text-white mb-2">${cluster.title}</h3>
-                    <p class="text-xs text-gray-400 mb-3 line-clamp-3">${cluster.summary}</p>
+                <div class="bg-gray-800 border ${borderColor} rounded-xl p-3 shadow-md mb-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="${badgeColor} text-[9px] font-bold px-2 py-0.5 rounded tracking-tighter">${badgeLabel}</span>
+                    </div>
+                    <h4 class="font-bold text-sm mb-1 text-gray-100">${cluster.title || 'Market Update'}</h4>
+                    <p class="text-xs text-gray-400 mb-3 leading-relaxed">${cluster.summary}</p>
                     <div class="flex flex-wrap gap-2">${chipsHtml}</div>
                 </div>
             `;
-            container.innerHTML += html;
+            container.insertAdjacentHTML('beforeend', html);
         });
     },
 
-    // Renderizza la lista del CONSENSO ASSET
-    renderConsensus(data) {
-        const container = document.getElementById('asset-container');
-        container.innerHTML = '';
-
-        if(data.length === 0) {
-            container.innerHTML = '<p class="text-center text-gray-500">Nessun consenso calcolato.</p>';
-            return;
-        }
-
-        data.forEach(item => {
-            const html = `
-                <div onclick="APP.openAssetModal('${item.ticker}')" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-sm flex justify-between items-center cursor-pointer active:bg-gray-700">
-                    <div>
-                        <h3 class="font-bold text-lg text-blue-400">${item.ticker}</h3>
-                        <p class="text-xs text-gray-500 mt-1">Confidenza: ${item.average_confidence}/10</p>
-                    </div>
-                    <div class="text-right">
-                        <span class="text-xs font-bold block ${this.getColor(item.consensus_short)}">${item.consensus_short || 'N/A'}</span>
-                        <span class="text-[10px] text-gray-500">Breve Termine</span>
-                    </div>
-                </div>
-            `;
-            container.innerHTML += html;
-        });
-    },
-
-    // Renderizza la Modale (Asset Control Center)
-    renderModalTimeline(timelineData) {
-        const container = document.getElementById('modal-timeline');
-        container.innerHTML = '';
+    // Apre il pannello laterale destro
+    async openAssetPanel(ticker) {
+        const panel = document.getElementById('asset-control-panel');
+        const overlay = document.getElementById('overlay');
         
-        timelineData.forEach(item => {
-            container.innerHTML += `
-                <div class="border-l-2 border-blue-500 pl-3 py-1">
-                    <span class="text-[10px] font-bold px-2 py-1 rounded bg-gray-700 ${this.getColor(item.sentiment_short)}">${item.sentiment_short}</span>
-                    <p class="text-xs text-gray-300 mt-2">${item.summary}</p>
-                </div>
-            `;
-        });
+        document.getElementById('panel-ticker').innerText = ticker;
+        panel.classList.add('open');
+        overlay.classList.remove('hidden');
+
+        // Carica i dati del consenso dal DB
+        const consensus = await getAssetConsensus(ticker);
+        if (consensus) {
+            document.getElementById('panel-consensus').innerText = consensus.consensus_short || 'N/A';
+            document.getElementById('panel-consensus').className = `text-lg font-bold ${this.getColor(consensus.consensus_short)}`;
+            document.getElementById('panel-confidence').innerHTML = `${consensus.average_confidence || '--'}<span class="text-xs text-gray-400">/10</span>`;
+            document.getElementById('panel-short').innerText = consensus.consensus_short || '--';
+            document.getElementById('panel-short').className = `font-bold text-sm ${this.getColor(consensus.consensus_short)}`;
+            document.getElementById('panel-summary').innerText = consensus.executive_summary || 'Nessuna sintesi disponibile.';
+        }
     }
 };

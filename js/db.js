@@ -1,4 +1,4 @@
-const SUPABASE_URL="https://qdzbuybmddixpdzuzkhu.supabase.co";
+const SUPABASE_URL = "https://qdzbuybmddixpdzuzkhu.supabase.co";
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkemJ1eWJtZGRpeHBkenV6a2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MDU2NTAsImV4cCI6MjA4NDk4MTY1MH0.hJBybo3l53J-xrxG50-iW7TbKTkZIoV4YFgY9Tp82q4';
 
 const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -10,15 +10,16 @@ const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 /**
- * Recupera gli ultimi eventi macro dal DB per il caricamento iniziale.
+ * Recupera gli ultimi insights dal DB.
+ * Ordiniamo per 'id' visto che 'created_at' non esiste nel tuo schema attuale.
  */
 async function fetchLatestInsights() {
     try {
         const { data, error } = await sbClient
             .from('market_insights')
             .select('*')
-            .order('created_at', { ascending: false })
-            .limit(30); // Prendiamo gli ultimi 30 per non appesantire lo Xiaomi
+            .order('id', { ascending: false })
+            .limit(30);
 
         if (error) throw error;
         return data;
@@ -29,7 +30,7 @@ async function fetchLatestInsights() {
 }
 
 /**
- * Recupera il consenso specifico per un asset quando clicchi sul chip.
+ * Recupera il consenso per un asset specifico.
  */
 async function getAssetConsensus(ticker) {
     try {
@@ -37,7 +38,7 @@ async function getAssetConsensus(ticker) {
             .from('asset_consensus')
             .select('*')
             .eq('ticker', ticker)
-            .single(); // Ne vogliamo solo uno, quello dell'asset cliccato
+            .single();
 
         if (error) throw error;
         return data;
