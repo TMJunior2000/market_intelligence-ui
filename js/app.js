@@ -1,42 +1,42 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("1. App avviata: DOM pronto"); //
+    console.log("APP: Avvio..."); //
 
-    // --- Inizializzazione UI ---
-    const btnFilters = document.getElementById('btn-toggle-filters');
-    const sidebar = document.getElementById('sidebar-filters');
-    const overlay = document.getElementById('overlay');
     const statusIndicator = document.getElementById('status-indicator');
+    const overlay = document.getElementById('overlay');
+    const sidebar = document.getElementById('sidebar-filters');
 
-    if (btnFilters) {
-        btnFilters.onclick = () => {
-            sidebar.classList.add('open');
-            overlay.classList.remove('hidden');
-        };
-    }
+    // --- Gestione UI ---
+    document.getElementById('btn-toggle-filters')?.addEventListener('click', () => {
+        sidebar?.classList.add('open');
+        overlay?.classList.add('open', 'hidden'); // 'hidden' rimosso da Tailwind
+        overlay?.classList.remove('hidden');
+    });
 
-    // --- Caricamento Dati ---
-    console.log("2. Tentativo di caricamento dati iniziali..."); //
+    const closeAll = () => {
+        document.querySelectorAll('.slide-panel').forEach(p => p.classList.remove('open'));
+        overlay?.classList.remove('open');
+        overlay?.classList.add('hidden');
+    };
+
+    document.getElementById('btn-close-filters')?.addEventListener('click', closeAll);
+    document.getElementById('btn-close-panel')?.addEventListener('click', closeAll);
+    overlay?.addEventListener('click', closeAll);
+
+    // --- Caricamento iniziale ---
     try {
-        const data = await fetchLatestInsights(); // Funzione in db.js
-        console.log("3. Dati ricevuti dal DB:", data); //
-        
-        if (data && data.length > 0) {
-            UI.renderFeed(data); // Funzione in ui.js
-            statusIndicator.style.backgroundColor = '#10b981'; // Verde
-        } else {
-            console.warn("4. Il DB è tornato vuoto o non ci sono tabelle"); //
+        const data = await fetchLatestInsights();
+        if (data) {
+            UI.renderFeed(data);
+            if (statusIndicator) statusIndicator.style.backgroundColor = '#10b981'; // Verde
         }
     } catch (e) {
-        console.error("ERRORE CRITICO AVVIO:", e); //
+        console.error("APP: Errore caricamento:", e); //
     }
 
-    // --- Attivazione Real-time ---
-    if (typeof sbClient !== 'undefined') {
-        console.log("5. Inizializzazione Real-time..."); //
-        sbClient.channel('market-changes')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'market_insights' }, (payload) => {
-                console.log("6. NUOVO DATO REAL-TIME!", payload.new); //
-                location.reload(); // Per ora ricarichiamo per sicurezza
-            }).subscribe();
-    }
+    // --- Real-time ---
+    sbClient.channel('market-changes')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'market_insights' }, (payload) => {
+            console.log("APP: Nuovo dato! Aggiorno..."); //
+            location.reload(); 
+        }).subscribe();
 });

@@ -1,90 +1,86 @@
 const UI = {
-    // Helper per i colori del sentiment
+    /** Helper colori sentiment */
     getColor(sentiment) {
         if (!sentiment) return 'text-gray-500';
         const s = sentiment.toUpperCase();
-        if (s.includes('BULLISH')) return 'text-emerald-400';
-        if (s.includes('BEARISH')) return 'text-red-400';
+        if (s.includes('BULLISH') || s.includes('BUY')) return 'text-emerald-400';
+        if (s.includes('BEARISH') || s.includes('SELL')) return 'text-red-400';
         return 'text-gray-400';
     },
 
-    // Funzione principale di disegno
+    /** Rendering del feed tramite Template HTML */
     renderFeed(data) {
-        console.log("UI: Inizio rendering di", data.length, "elementi"); // Sensore
-        const container = document.getElementById('feed-container'); //
-        
-        if (!container) {
-            console.error("UI: Errore! Non trovo 'feed-container' nell'HTML"); //
-            return;
-        }
+        const container = document.getElementById('feed-container');
+        const cardTemplate = document.getElementById('template-card');
+        const chipTemplate = document.getElementById('template-chip');
 
-        container.innerHTML = ''; // Svuota il caricamento
+        if (!container || !cardTemplate) return console.error("UI: Elementi non trovati."); //
 
-        // Clustering: Raggruppiamo i dati per evitare duplicati
+        container.innerHTML = ''; // Pulizia feed
+
+        // Clustering per Titolo (unisce asset influenzati dallo stesso evento)
         const clusters = {};
         data.forEach(item => {
-            const key = item.summary || item.title || item.id;
+            const key = item.title || item.id;
             if (!clusters[key]) {
-                clusters[key] = { 
-                    title: item.title, 
-                    summary: item.summary, 
-                    type: item.insight_type,
-                    assets: [] 
-                };
+                clusters[key] = { ...item, assets: [] };
             }
             if (item.asset_ticker) {
-                clusters[key].assets.push({ 
-                    ticker: item.asset_ticker, 
-                    sentiment: item.sentiment_short 
-                });
+                clusters[key].assets.push({ ticker: item.asset_ticker, sentiment: item.sentiment_short });
             }
         });
 
-        // Generazione fisica dell'HTML
+        // Clonazione e riempimento dei template
         Object.values(clusters).forEach(cluster => {
-            const isMacro = cluster.type === 'MACRO_EVENT';
-            const borderColor = isMacro ? 'border-purple-500/40' : 'border-blue-500/30';
-            const badgeLabel = isMacro ? 'MACRO' : 'ANALYSIS';
-            const badgeColor = isMacro ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400';
+            const clone = cardTemplate.content.cloneNode(true);
+            const cardDiv = clone.querySelector('.card-terminal');
 
-            const chipsHtml = cluster.assets.map(a => `
-                <button onclick="UI.openAssetPanel('${a.ticker}')" 
-                        class="bg-gray-700 hover:bg-gray-600 text-[10px] px-2 py-1 rounded border border-gray-600 font-bold transition-colors ${this.getColor(a.sentiment)}">
-                    ${a.ticker} ${a.sentiment === 'BULLISH' ? '↑' : a.sentiment === 'BEARISH' ? '↓' : '•'}
-                </button>
-            `).join('');
+            // Testi
+            clone.querySelector('.card-title').textContent = cluster.title || 'Market Update';
+            clone.querySelector('.card-summary').textContent = cluster.summary || 'Nessun dettaglio.';
 
-            const cardHtml = `
-                <div class="bg-gray-800 border ${borderColor} rounded-xl p-4 shadow-lg mb-4">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="${badgeColor} text-[9px] font-bold px-2 py-0.5 rounded tracking-tighter">${badgeLabel}</span>
-                    </div>
-                    <h4 class="font-bold text-base mb-1 text-gray-100">${cluster.title || 'Market Update'}</h4>
-                    <p class="text-xs text-gray-400 mb-4 leading-relaxed">${cluster.summary || 'Nessun dettaglio disponibile.'}</p>
-                    <div class="flex flex-wrap gap-2">${chipsHtml}</div>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', cardHtml);
+            // Stile Badge e Bordo (Macro vs Asset)
+            const badge = clone.querySelector('.badge-type');
+            const isMacro = cluster.insight_type === 'MACRO_EVENT';
+            badge.textContent = isMacro ? 'Macro Event' : 'Asset Analysis';
+            
+            if (isMacro) {
+                badge.classList.add('bg-purple-500/20', 'text-purple-400');
+                cardDiv.classList.add('border-purple-500/40');
+            } else {
+                badge.classList.add('bg-blue-500/20', 'text-blue-400');
+                cardDiv.classList.add('border-blue-500/30');
+            }
+
+            // Iniezione Asset Chips
+            const assetsContainer = clone.querySelector('.card-assets');
+            cluster.assets.forEach(asset => {
+                const chipClone = chipTemplate.content.cloneNode(true);
+                const btn = chipClone.querySelector('button');
+                btn.textContent = asset.ticker;
+                btn.classList.add(this.getColor(asset.sentiment));
+                btn.onclick = () => this.openAssetPanel(asset.ticker);
+                assetsContainer.appendChild(chipClone);
+            });
+
+            container.appendChild(clone);
         });
-        
-        console.log("UI: Rendering completato correttamente"); //
+        console.log("UI: Rendering completato."); //
     },
 
-    // Funzione per il pannello laterale
+    /** Gestione Pannelli Laterali */
     async openAssetPanel(ticker) {
-        console.log("UI: Apertura pannello per", ticker); //
-        const panel = document.getElementById('asset-control-panel'); //
-        const overlay = document.getElementById('overlay'); //
-        
-        if (panel && overlay) {
-            document.getElementById('panel-ticker').innerText = ticker; //
-            panel.classList.add('open'); //
-            overlay.classList.remove('hidden'); //
-            
-            // Qui caricheremo il consenso specifico
-            const consensus = await getAssetConsensus(ticker); //
+        const panel = document.getElementById('asset-control-panel');
+        const overlay = document.getElementById('overlay');
+        if (panel) {
+            document.getElementById('panel-ticker').textContent = ticker;
+            panel.classList.add('open');
+            overlay?.classList.add('open');
+            overlay?.classList.remove('hidden');
+
+            const consensus = await getAssetConsensus(ticker);
             if (consensus) {
-                document.getElementById('panel-summary').innerText = consensus.executive_summary; //
+                document.getElementById('panel-summary').textContent = consensus.executive_summary;
             }
         }
     }
