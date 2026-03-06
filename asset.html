@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asset — Market Intelligence</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+  <!-- Componente: Navbar variante asset (con breadcrumb ticker) -->
+  <div data-component="navbar-asset"></div>
+
+  <!-- Componente: Sezione hero + storico analisi asset -->
+  <div data-component="asset-section"></div>
+
+  <!-- Scripts: ordine fisso — config → components → asset -->
+  <script src="js/config.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/asset.js"></script>
+
+  <script>
+    // Imposta ticker nel <title> subito, prima ancora che i componenti si carichino
+    const ticker = new URLSearchParams(window.location.search).get('ticker');
+    if (ticker) document.title = `${ticker} — Market Intelligence`;
+  </script>
+
+</body>
+</html>

@@ -1,56 +1,24 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pragmatic Finance | Worldy Style</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/custom.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" async></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Market Intelligence — Feed</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pragmatic Finance</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/custom.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body class="bg-[#f8f9fa] text-[#1a1a1a] flex flex-col font-sans">
+<body>
 
-    <header class="h-[70px] bg-white border-b border-gray-200 flex justify-between items-center px-6 z-50">
-        <div class="flex items-baseline gap-1">
-            <span class="text-xl font-[900] tracking-tighter uppercase">Pragmatic <span class="text-[#007bff]">Finance</span></span>
-            <span class="bg-[#ff923b] text-white text-[9px] font-black px-1.5 py-0.5 rounded-sm uppercase">Beta</span>
-        </div>
-        <div id="status-indicator" class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-    </header>
+  <!-- Componente: Navbar con ricerca e filtri -->
+  <div data-component="navbar"></div>
 
-    <div id="nav-mount"></div>
+  <!-- Componente: Sezione feed principale -->
+  <div data-component="feed-section"></div>
 
-    <main class="flex-1 p-6 md:p-10">
-        <div id="feed-container" class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-            </div>
-    </main>
+  <!-- Scripts: ordine fisso — config → components → feed -->
+  <script src="js/config.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/feed.js"></script>
 
-    <template id="tpl-card">
-        <div class="card-worldy bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col shadow-sm">
-            <div class="card-img-box relative aspect-video bg-cover bg-center">
-                <div class="card-category-badge absolute bottom-3 left-3 bg-[#007bff] text-white text-[10px] font-black px-2 py-1 uppercase rounded-sm"></div>
-            </div>
-            <div class="p-5 flex flex-col flex-1">
-                <a href="#" target="_blank" class="card-title text-[17px] font-extrabold text-black leading-tight mb-3 hover:text-[#007bff]"></a>
-                <p class="card-excerpt text-[13px] text-gray-500 leading-relaxed mb-4 line-clamp-3"></p>
-                <div class="mt-auto pt-3 border-t border-gray-50 flex justify-between text-[11px] text-gray-400 font-bold uppercase">
-                    <span class="card-date"></span>
-                    <span class="card-source text-[#007bff]"></span>
-                </div>
-            </div>
-        </div>
-    </template>
-
-    <script src="js/app.js"></script>
 </body>
 </html>
