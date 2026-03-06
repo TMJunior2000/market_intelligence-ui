@@ -1,4 +1,3 @@
-// js/app.js
 const APP = {
     state: {
         macroData: [],
