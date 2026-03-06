@@ -8,25 +8,22 @@ const UI = {
         return 'text-gray-400';
     },
 
-    // Svuota il feed
-    clearFeed() {
-        document.getElementById('feed-container').innerHTML = '';
-    },
-
-    // Renderizza il feed con clustering per eventi macro
+    // Funzione principale di disegno
     renderFeed(data) {
-        const container = document.getElementById('feed-container');
-        container.innerHTML = '';
-
-        if (!data || data.length === 0) {
-            container.innerHTML = '<p class="text-center text-gray-500 mt-10 text-sm">In attesa di segnali Macro...</p>';
+        console.log("UI: Inizio rendering di", data.length, "elementi"); // Sensore
+        const container = document.getElementById('feed-container'); //
+        
+        if (!container) {
+            console.error("UI: Errore! Non trovo 'feed-container' nell'HTML"); //
             return;
         }
 
-        // Clustering: Raggruppiamo per 'summary' o 'title' per unire gli asset influenzati
+        container.innerHTML = ''; // Svuota il caricamento
+
+        // Clustering: Raggruppiamo i dati per evitare duplicati
         const clusters = {};
         data.forEach(item => {
-            const key = item.summary || item.title;
+            const key = item.summary || item.title || item.id;
             if (!clusters[key]) {
                 clusters[key] = { 
                     title: item.title, 
@@ -43,10 +40,10 @@ const UI = {
             }
         });
 
-        // Disegna le card
+        // Generazione fisica dell'HTML
         Object.values(clusters).forEach(cluster => {
             const isMacro = cluster.type === 'MACRO_EVENT';
-            const borderColor = isMacro ? 'border-purple-500/30' : 'border-blue-500/30';
+            const borderColor = isMacro ? 'border-purple-500/40' : 'border-blue-500/30';
             const badgeLabel = isMacro ? 'MACRO' : 'ANALYSIS';
             const badgeColor = isMacro ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400';
 
@@ -57,38 +54,38 @@ const UI = {
                 </button>
             `).join('');
 
-            const html = `
-                <div class="bg-gray-800 border ${borderColor} rounded-xl p-3 shadow-md mb-4">
+            const cardHtml = `
+                <div class="bg-gray-800 border ${borderColor} rounded-xl p-4 shadow-lg mb-4">
                     <div class="flex items-center gap-2 mb-2">
                         <span class="${badgeColor} text-[9px] font-bold px-2 py-0.5 rounded tracking-tighter">${badgeLabel}</span>
                     </div>
-                    <h4 class="font-bold text-sm mb-1 text-gray-100">${cluster.title || 'Market Update'}</h4>
-                    <p class="text-xs text-gray-400 mb-3 leading-relaxed">${cluster.summary}</p>
+                    <h4 class="font-bold text-base mb-1 text-gray-100">${cluster.title || 'Market Update'}</h4>
+                    <p class="text-xs text-gray-400 mb-4 leading-relaxed">${cluster.summary || 'Nessun dettaglio disponibile.'}</p>
                     <div class="flex flex-wrap gap-2">${chipsHtml}</div>
                 </div>
             `;
-            container.insertAdjacentHTML('beforeend', html);
+            container.insertAdjacentHTML('beforeend', cardHtml);
         });
+        
+        console.log("UI: Rendering completato correttamente"); //
     },
 
-    // Apre il pannello laterale destro
+    // Funzione per il pannello laterale
     async openAssetPanel(ticker) {
-        const panel = document.getElementById('asset-control-panel');
-        const overlay = document.getElementById('overlay');
+        console.log("UI: Apertura pannello per", ticker); //
+        const panel = document.getElementById('asset-control-panel'); //
+        const overlay = document.getElementById('overlay'); //
         
-        document.getElementById('panel-ticker').innerText = ticker;
-        panel.classList.add('open');
-        overlay.classList.remove('hidden');
-
-        // Carica i dati del consenso dal DB
-        const consensus = await getAssetConsensus(ticker);
-        if (consensus) {
-            document.getElementById('panel-consensus').innerText = consensus.consensus_short || 'N/A';
-            document.getElementById('panel-consensus').className = `text-lg font-bold ${this.getColor(consensus.consensus_short)}`;
-            document.getElementById('panel-confidence').innerHTML = `${consensus.average_confidence || '--'}<span class="text-xs text-gray-400">/10</span>`;
-            document.getElementById('panel-short').innerText = consensus.consensus_short || '--';
-            document.getElementById('panel-short').className = `font-bold text-sm ${this.getColor(consensus.consensus_short)}`;
-            document.getElementById('panel-summary').innerText = consensus.executive_summary || 'Nessuna sintesi disponibile.';
+        if (panel && overlay) {
+            document.getElementById('panel-ticker').innerText = ticker; //
+            panel.classList.add('open'); //
+            overlay.classList.remove('hidden'); //
+            
+            // Qui caricheremo il consenso specifico
+            const consensus = await getAssetConsensus(ticker); //
+            if (consensus) {
+                document.getElementById('panel-summary').innerText = consensus.executive_summary; //
+            }
         }
     }
 };
