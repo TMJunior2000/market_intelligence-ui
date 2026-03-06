@@ -403,16 +403,31 @@ img { display: block; max-width: 100%; }
   letter-spacing: -0.2px;
 }
 
-/* Card summary */
+/* Card summary - Dimensioni invariate, aggiunto scroll interno */
 .card-summary {
   font-size: 13.5px;
   color: var(--text-secondary);
   line-height: 1.65;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  
+  /* Altezza fissa calcolata su 3 righe per non alterare la card */
+  height: 67px; 
+  overflow-y: auto;
+  padding-right: 4px; /* Spazio per la scrollbar */
+  
+  /* Rimosso webkit-box per abilitare lo scroll */
+  display: block; 
+}
+
+/* Scrollbar sottile in stile Terminale/Worldy */
+.card-summary::-webkit-scrollbar {
+  width: 3px;
+}
+.card-summary::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+.card-summary::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 
 /* Sentiment row */

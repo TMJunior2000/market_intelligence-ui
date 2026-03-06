@@ -95,23 +95,25 @@ function buildCard(insight, index) {
         ? new Date(insight.content_feed.published_at).toLocaleDateString('it-IT', {day:'2-digit', month:'short'}) 
         : '';
 
-    // Generiamo i pulsanti per ogni ticker presente nella lista aggregata
+    // Genera la lista di ticker aggregati
     const tickerButtons = (insight.all_tickers || [insight.asset_ticker || 'MACRO'])
         .map(t => {
             const badgeClass = isMacro ? 'macro-badge' : 'ticker-badge';
             const url = isMacro ? '#' : `asset.html?ticker=${t}`;
-            return `<a class="${badgeClass}" href="${url}" style="margin-right: 5px; margin-bottom: 5px; display: inline-block;">${t}</a>`;
+            return `<a class="${badgeClass}" href="${url}" style="margin-right: 4px; margin-bottom: 4px; display: inline-block;">${t}</a>`;
         }).join('');
 
     card.innerHTML = `
-        <div class="card-top" style="flex-wrap: wrap; gap: 5px;">
-            <div class="ticker-container" style="display: flex; flex-wrap: wrap;">
+        <div class="card-top" style="align-items: flex-start; margin-bottom: 8px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 4px; flex: 1;">
                 ${tickerButtons}
             </div>
-            <span class="confidence-badge" style="margin-left: auto;">★ ${insight.confidence || 0}/10</span>
+            <span class="confidence-badge" style="white-space: nowrap;">★ ${insight.confidence || 0}/10</span>
         </div>
         <h2 class="card-title">${insight.title}</h2>
-        <p class="card-summary">${insight.summary || ''}</p>
+        <div class="card-summary">
+            ${insight.summary || ''}
+        </div>
         <div class="card-footer">
             <span class="card-source">${insight.content_feed?.sources?.name || 'PRAGMATIC'}</span>
             <span class="card-date">${pubDate}</span>
