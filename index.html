@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="it">
 
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -11,9 +10,7 @@
     <link rel="icon" type="image/png" href="assets/icons/stock.png">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" async></script>
-    
     <link rel="stylesheet" href="css/style.css">
-
     <link rel="stylesheet" href="css/terminal.css">
 </head>
 
@@ -41,13 +38,12 @@
                 <h2 class="text-xs font-bold text-gray-500 uppercase tracking-[0.2em]">Filtri Radar</h2>
                 <button id="btn-close-filters" class="text-gray-400 hover:text-white text-xl p-2">✕</button>
             </div>
-            
             <div class="space-y-6">
                 <div>
                     <label class="text-[10px] font-bold text-gray-500 uppercase block mb-2">Ricerca Ticker</label>
                     <input type="text" id="search-ticker" placeholder="es. NVDA..." class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all">
                 </div>
-                </div>
+            </div>
         </aside>
 
         <section id="main-feed" class="flex-1 h-full overflow-y-auto no-scrollbar bg-gray-900">
@@ -72,13 +68,29 @@
                 <button id="btn-close-panel" class="w-10 h-10 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-full transition-colors">✕</button>
             </div>
             <div class="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
-                </div>
+                <p id="panel-summary" class="text-sm text-gray-300 leading-relaxed italic"></p>
+            </div>
         </aside>
 
         <div id="overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 hidden transition-opacity duration-300"></div>
 
     </main>
     
+    <template id="template-card">
+        <div class="card-terminal bg-gray-800 border-l-4 p-4 mb-4 shadow-lg rounded-xl transition-all">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="badge-type text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter"></span>
+            </div>
+            <h4 class="card-title font-bold text-sm mb-1 text-white"></h4>
+            <p class="card-summary text-xs text-gray-400 mb-4 leading-relaxed line-clamp-3"></p>
+            <div class="card-assets flex flex-wrap gap-2"></div>
+        </div>
+    </template>
+
+    <template id="template-chip">
+        <button class="bg-gray-700 hover:bg-gray-600 text-[10px] px-2 py-1 rounded border border-gray-600 font-bold transition-all cursor-pointer shrink-0"></button>
+    </template>
+
     <script src="js/db.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/app.js"></script>
