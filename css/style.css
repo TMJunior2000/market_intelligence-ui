@@ -346,6 +346,7 @@ img { display: block; max-width: 100%; }
   line-height: 1.65;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -476,8 +477,6 @@ img { display: block; max-width: 100%; }
   box-shadow: var(--shadow-card);
 }
 
-.asset-hero-left {}
-
 .asset-ticker-large {
   font-family: var(--font-mono);
   font-size: 36px;
@@ -570,7 +569,6 @@ img { display: block; max-width: 100%; }
   flex-wrap: wrap;
 }
 
-.meta-item { }
 .meta-item dt {
   font-size: 9px;
   font-weight: 700;
