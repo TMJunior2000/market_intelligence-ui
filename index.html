@@ -2,31 +2,41 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pragmatic Intel</title>
+    
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        .slide-panel.open { transform: translateX(0) !important; }
-    </style>
+    <link rel="stylesheet" href="css/terminal.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" async></script>
 </head>
-<body class="bg-[#0B0F19] text-gray-100 h-screen flex flex-col overflow-hidden font-sans">
+<body class="bg-gray-900 text-gray-100 h-screen flex flex-col font-sans overflow-hidden">
 
-    <header class="h-16 bg-[#111827] border-b border-gray-800 flex justify-between items-center px-4 z-40">
-        <button id="btn-toggle-filters" class="p-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg transition-colors cursor-pointer">
-            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"/></svg>
-        </button>
-        <h1 class="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">Pragmatic Intel</h1>
-        <div class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_red]"></div>
+    <header class="h-16 bg-gray-800 border-b border-gray-700 flex justify-between items-center px-4 z-40 shrink-0">
+        <div class="flex items-center gap-4">
+            <button id="btn-toggle-filters" class="group p-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg transition-all cursor-pointer">
+                <svg class="w-5 h-5 text-gray-400 group-hover:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"/></svg>
+            </button>
+            <h1 class="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">Pragmatic Intel</h1>
+        </div>
+        <div class="flex items-center gap-2 bg-gray-900/80 px-3 py-1.5 rounded-md border border-gray-800">
+            <span class="text-[9px] font-black text-gray-500 uppercase tracking-widest">Live Terminal</span>
+            <div id="status-indicator" class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>
+        </div>
     </header>
 
     <main class="flex-1 relative flex overflow-hidden">
         <div id="sidebar-mount"></div>
-        
-        <div id="overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden transition-opacity"></div>
-        
-        <div class="flex-1 flex items-center justify-center text-gray-700 uppercase text-[10px] tracking-widest">
-            Terminale Pronto
-        </div>
+
+        <section id="main-feed" class="flex-1 h-full overflow-y-auto no-scrollbar bg-gray-900">
+            <div class="max-w-2xl mx-auto p-4 sm:p-8 pb-32">
+                <div class="text-center py-20 text-gray-700 uppercase text-[10px] tracking-widest">
+                    Terminale In Attesa di Dati...
+                </div>
+            </div>
+        </section>
+
+        <div id="overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-30 hidden transition-opacity duration-300"></div>
     </main>
 
     <script src="js/app.js"></script>
