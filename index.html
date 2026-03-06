@@ -6,7 +6,8 @@
     <meta name="theme-color" content="#1f2937">
     <title>Market Intelligence</title>
     <link rel="manifest" href="manifest.json">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" href="assets/icons/stock.png">
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-900 text-white h-screen flex flex-col font-sans overflow-hidden">
@@ -83,6 +84,9 @@
             <span class="text-[10px] mt-1 font-medium">Filtri</span>
         </button>
     </nav>
+
+    <script src="https://cdn.tailwindcss.com" defer></script>
+    <script>window.tailwind = window.tailwind || {}; window.tailwind.config = { theme: { extend: {} } };</script>
 
     <script src="js/db.js"></script>
     <script src="js/ui.js"></script>
