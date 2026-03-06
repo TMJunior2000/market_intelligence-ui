@@ -1,44 +1,15 @@
-/* css/terminal.css */
-
-/* Gestione Pannello Sinistro (Filtri) */
-.slide-panel-left {
-    transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* Definiamo solo il MOVIMENTO che Tailwind non gestisce bene via classi statiche */
+.slide-panel {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s;
+    visibility: hidden;
+    z-index: 50;
 }
 
-.slide-panel-left.open {
-    transform: translateX(0);
+.slide-panel.open {
+    transform: translateX(0) !important;
+    visibility: visible;
 }
 
-/* Gestione Pannello Destro (Control Center) */
-.slide-panel-right {
-    transform: translateX(100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.slide-panel-right.open {
-    transform: translateX(0);
-}
-
-/* Overlay scuro per mettere in risalto i pannelli aperti */
-#overlay.visible {
-    display: block;
-    opacity: 1;
-}
-
-/* Ottimizzazione scorrimento feed */
-.no-scrollbar::-webkit-scrollbar {
-    display: none;
-}
-
-.no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-    scroll-behavior: smooth;
-}
-
-/* Effetto Glassmorphism per le card (Stile Bloomberg) */
-.macro-card-glow {
-    box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);
-    border-left: 4px solid #8b5cf6;
-}
+/* Nascondi scrollbar su Xiaomi mantenendo lo scroll attivo */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
