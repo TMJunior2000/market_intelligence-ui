@@ -10,19 +10,26 @@ console.log("DB: Client inizializzato."); //
 
 /** Recupera gli ultimi 30 insight */
 async function fetchLatestInsights() {
-    console.log("DB: Avvio recupero dati..."); //
+    console.log("DB: Avvio recupero dati relazionali V5.0...");
     try {
         const { data, error } = await sbClient
             .from('market_insights')
-            .select('*')
+            .select(`
+                *,
+                content_feed (
+                    title,
+                    url,
+                    sources (name, platform)
+                )
+            `)
             .order('id', { ascending: false })
             .limit(30);
 
         if (error) throw error;
-        console.log(`DB: Ricevuti ${data?.length || 0} record.`); //
+        console.log("DB: Record ricevuti:", data.length);
         return data;
     } catch (err) {
-        console.error("DB: Errore fetch:", err.message); //
+        console.error("DB Error:", err.message);
         return [];
     }
 }
