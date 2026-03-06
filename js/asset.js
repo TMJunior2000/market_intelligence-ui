@@ -21,7 +21,7 @@ document.addEventListener('componentsReady', async () => {
 
 // ---- Carica dati asset da tabella assets ----
 async function loadAssetInfo(ticker) {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('assets')
     .select('*')
     .eq('ticker', ticker)
@@ -44,7 +44,7 @@ async function loadAssetInsights(ticker) {
   const grid = document.getElementById('asset-feed-grid');
   grid.innerHTML = `<div class="state-msg"><div class="spinner"></div><p>Caricamento…</p></div>`;
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('market_insights')
     .select(`
       id,

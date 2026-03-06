@@ -24,7 +24,7 @@ async function loadFeed() {
   const grid = document.getElementById('feed-grid');
   showLoading(grid);
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('market_insights')
     .select(`
       id,
