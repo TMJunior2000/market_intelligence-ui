@@ -11,28 +11,14 @@
 <body class="bg-[#f8f9fa] text-[#1a1a1a] flex flex-col font-sans overflow-x-hidden">
 
     <header class="h-[70px] bg-white border-b border-[#e9ecef] flex justify-between items-center px-6 z-50 shrink-0">
-        <div class="flex items-center gap-6">
-            <div class="flex items-baseline gap-1">
-                <span class="text-xl font-[900] tracking-tighter text-black uppercase">Pragmatic <span class="text-[#007bff]">Finance</span></span>
-                <span class="bg-[#ff923b] text-white text-[9px] font-black px-1.5 py-0.5 rounded-sm uppercase">Beta</span>
-            </div>
+        <div class="flex items-baseline gap-1">
+            <span class="text-xl font-[900] tracking-tighter text-black uppercase">Pragmatic <span class="text-[#007bff]">Finance</span></span>
+            <span class="bg-[#ff923b] text-white text-[9px] font-black px-1.5 py-0.5 rounded-sm uppercase">Beta</span>
         </div>
-        <div class="flex items-center gap-4">
-             <div id="status-indicator" class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></div>
-        </div>
+        <div id="status-indicator" class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-md"></div>
     </header>
 
-    <nav class="bg-white border-b-2 border-[#007bff] overflow-x-auto no-scrollbar sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto flex items-center px-4 h-[50px] gap-6 whitespace-nowrap">
-            <a href="#" class="nav-category active">Bonus</a>
-            <a href="#" class="nav-category">Borsa</a>
-            <a href="#" class="nav-category">Business Stories</a>
-            <a href="#" class="nav-category">Crypto</a>
-            <a href="#" class="nav-category">Daily</a>
-            <a href="#" class="nav-category">Economia</a>
-            <a href="#" class="nav-category border-l border-gray-200 pl-6 text-[#007bff] font-black uppercase text-[10px]">High Conviction</a>
-        </div>
-    </nav>
+    <div id="nav-mount"></div>
 
     <main class="flex-1">
         <section id="main-feed" class="max-w-6xl mx-auto p-6 md:p-10">

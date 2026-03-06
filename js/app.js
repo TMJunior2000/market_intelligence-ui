@@ -1,43 +1,38 @@
 /**
- * APP.JS: Caricamento Dinamico Componenti
+ * APP.JS: Caricamento dinamico dei componenti Worldy-Style
  */
 document.addEventListener('DOMContentLoaded', async () => {
-    const mount = document.getElementById('sidebar-mount');
+    const navMount = document.getElementById('nav-mount');
 
     try {
-        // 1. Fetch del file esterno
-        const response = await fetch('components/sidebar.html');
-        if (!response.ok) throw new Error("Sidebar non trovata");
-        const html = await response.text();
+        // 1. Caricamento della Navbar Separata
+        const response = await fetch('components/secondary-nav.html');
+        if (!response.ok) throw new Error("Componente Navbar non trovato");
         
-        // 2. Iniezione nel DOM
-        mount.innerHTML = html;
-        console.log("APP: Sidebar (Pilastro 1) caricata.");
+        navMount.innerHTML = await response.text();
+        console.log("APP: Secondary Navbar caricata.");
 
-        // 3. Attivazione Eventi UI
-        initUI();
+        // 2. Inizializzazione Click Categorie
+        initNavEvents();
+        
     } catch (err) {
         console.error("APP ERROR:", err);
     }
 });
 
-function initUI() {
-    const btnOpen = document.getElementById('btn-toggle-filters');
-    const btnClose = document.getElementById('btn-close-filters');
-    const sidebar = document.getElementById('sidebar-filters');
-    const overlay = document.getElementById('overlay');
-
-    const toggle = (state) => {
-        if (state) {
-            sidebar.classList.add('open');
-            overlay.classList.remove('hidden');
-        } else {
-            sidebar.classList.remove('open');
-            overlay.classList.add('hidden');
-        }
-    };
-
-    if (btnOpen) btnOpen.onclick = () => toggle(true);
-    if (btnClose) btnClose.onclick = () => toggle(false);
-    if (overlay) overlay.onclick = () => toggle(false);
+function initNavEvents() {
+    const categories = document.querySelectorAll('.nav-category');
+    
+    categories.forEach(cat => {
+        cat.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Rimuove 'active' da tutti e lo mette a quello cliccato
+            categories.forEach(c => c.classList.remove('active'));
+            cat.classList.add('active');
+            
+            const selected = cat.getAttribute('data-category');
+            console.log(`Filtro attivato: ${selected}`);
+            // Qui chiameremo la funzione di Supabase per filtrare i dati
+        });
+    });
 }
