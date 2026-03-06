@@ -1,18 +1,37 @@
-<nav class="bg-white border-b-2 border-[#007bff] sticky top-0 z-40 shadow-sm">
-    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center px-4 py-3 gap-6">
-        
-        <div class="relative w-full md:w-80">
-            <input type="text" id="asset-search" placeholder="Cerca Assets (es. BTC)..." 
-                   class="w-full bg-[#f0f2f5] border-none rounded-md px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[#007bff]/20">
-            <div id="search-suggestions" class="absolute w-full bg-white border border-gray-200 mt-1 rounded-md shadow-xl hidden z-50"></div>
-        </div>
+<nav class="navbar">
+    <div class="navbar-brand">
+        <span class="logo-text">PRAGMATIC FINANCE</span>
+        <span class="logo-dot"></span>
+        <span class="logo-sub">Beta</span>
+    </div>
 
-        <div class="flex items-center gap-3 overflow-x-auto no-scrollbar whitespace-nowrap">
-            <button class="btn-worldy active" data-filter="all">Tutto</button>
-            <button class="btn-worldy" data-filter="borsa">Borsa</button>
-            <button class="btn-worldy" data-filter="crypto">Crypto</button>
-            <div class="h-4 w-px bg-gray-200 mx-2"></div>
-            <button id="nav-high-conviction" class="text-[#007bff] font-black text-[10px] uppercase tracking-widest cursor-pointer">High Conviction</button>
-        </div>
+    <div class="navbar-divider"></div>
+
+    <div class="navbar-search">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input type="text" id="asset-search" placeholder="Cerca Assets (es. BTC)..." autocomplete="off">
+        <div id="search-suggestions" class="absolute w-full bg-white border border-gray-200 mt-1 rounded-md shadow-xl hidden z-50"></div>
+    </div>
+
+    <div class="navbar-filters">
+        <button class="filter-btn active" data-filter="all">Tutto</button>
+        <button class="filter-btn borsa-filter" data-filter="borsa">Borsa</button>
+        <button class="filter-btn crypto-filter" data-filter="crypto">Crypto</button>
+        <button class="filter-btn macro-filter" data-filter="macro">Macro</button>
+        
+        <div class="navbar-divider" style="height: 20px; margin: 0 10px;"></div>
+        
+        <button id="nav-high-conviction" class="filter-btn" style="border: none; color: var(--accent);">
+            High Conviction
+        </button>
+    </div>
+
+    <div class="navbar-spacer"></div>
+
+    <div class="live-badge">
+        <span class="live-dot"></span>
+        LIVE TERMINAL
     </div>
 </nav>
