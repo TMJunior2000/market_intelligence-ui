@@ -1,42 +1,39 @@
-<aside id="sidebar-filters" class="slide-panel slide-panel-left absolute inset-y-0 left-0 w-[340px] bg-gray-800 border-r border-gray-700 p-6 flex flex-col shadow-2xl z-50 overflow-y-auto no-scrollbar">
+<aside id="sidebar-filters" class="fixed inset-y-0 left-0 w-[340px] bg-white border-r border-[#e9ecef] p-6 flex flex-col shadow-2xl z-50 transition-transform duration-300 -translate-x-full">
     
-    <div class="flex justify-between items-center mb-8 pb-4 border-b border-gray-700">
-        <h2 class="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
-            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-            Smart Filters
-        </h2>
-        <button id="btn-close-filters" class="text-gray-500 hover:text-white bg-gray-700 rounded-md p-1.5 transition-colors cursor-pointer">✕</button>
+    <div class="flex justify-between items-center mb-10 pb-4 border-b border-[#f1f1f1]">
+        <h2 class="text-lg font-extrabold text-black">Filtri <span class="text-[#007bff]">Finance</span></h2>
+        <button id="btn-close-filters" class="text-gray-400 hover:text-black text-xl p-2 cursor-pointer">✕</button>
     </div>
 
     <div class="space-y-8 flex-1">
         <div>
-            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-3">Ricerca Rapida</label>
-            <input type="text" id="search-ticker" placeholder="Es. US100, EURUSD..." 
-                   class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-3 text-sm focus:border-blue-500 outline-none transition-all placeholder-gray-600">
+            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Ricerca Ticker</label>
+            <input type="text" id="search-ticker" placeholder="Cerca es. EURUSD..." 
+                   class="w-full bg-white border border-[#e9ecef] rounded-md px-4 py-3 text-sm focus:border-[#007bff] outline-none transition-all placeholder-gray-300">
         </div>
 
         <div>
-            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-3">Fonti Informative</label>
-            <div class="space-y-3">
-                <label class="flex items-center justify-between p-3 bg-gray-900 border border-gray-700 rounded-lg cursor-pointer hover:border-gray-600 transition-all">
-                    <span class="text-sm text-gray-300">🏦 Fed / BCE (Macro)</span>
-                    <input type="checkbox" checked class="w-4 h-4 accent-blue-500">
+            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-4">Canali Informativi</label>
+            <div class="space-y-1">
+                <label class="flex items-center justify-between py-3 border-b border-[#f8f9fa] cursor-pointer group">
+                    <span class="text-sm font-semibold text-[#333] group-hover:text-[#007bff]">🏦 Fed / BCE (Macro)</span>
+                    <input type="checkbox" checked class="w-4 h-4 accent-[#007bff]">
                 </label>
-                <label class="flex items-center justify-between p-3 bg-gray-900 border border-gray-700 rounded-lg cursor-pointer hover:border-gray-600 transition-all">
-                    <span class="text-sm text-gray-300">🦅 Truth Social (Trump)</span>
-                    <input type="checkbox" checked class="w-4 h-4 accent-purple-500">
+                <label class="flex items-center justify-between py-3 border-b border-[#f8f9fa] cursor-pointer group">
+                    <span class="text-sm font-semibold text-[#333] group-hover:text-[#007bff]">🦅 Truth Social (Trump)</span>
+                    <input type="checkbox" checked class="w-4 h-4 accent-[#007bff]">
                 </label>
             </div>
         </div>
     </div>
 
-    <div class="mt-10 pt-6 border-t border-gray-700">
-        <label class="flex items-center justify-between cursor-pointer p-4 bg-gray-900 border border-emerald-500/20 rounded-xl hover:bg-emerald-500/5 transition-colors">
+    <div class="mt-10">
+        <label class="flex items-center justify-between p-4 bg-[#e7f3ff] rounded-lg border border-[#cce5ff] cursor-pointer">
             <div>
-                <span class="block text-sm font-black text-emerald-400">High Conviction</span>
-                <span class="block text-[10px] text-gray-400 uppercase tracking-wider">Solo segnali > 8</span>
+                <span class="block text-sm font-extrabold text-[#0056b3]">HIGH CONVICTION</span>
+                <span class="block text-[9px] text-[#0056b3]/70 uppercase font-bold tracking-tighter">Solo segnali 8/10+</span>
             </div>
-            <input type="checkbox" id="filter-confidence" class="w-5 h-5 accent-emerald-500 cursor-pointer">
+            <input type="checkbox" id="filter-confidence" class="w-5 h-5 accent-[#0056b3]">
         </label>
     </div>
 </aside>

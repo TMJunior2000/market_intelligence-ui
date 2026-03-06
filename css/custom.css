@@ -1,0 +1,20 @@
+/* Animazione Sidebar */
+#sidebar-filters.open {
+    transform: translateX(0);
+}
+
+/* Scrollbar invisibile stile tecnico */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Stile per i termini evidenziati nelle card (che faremo nel feed) */
+.bold-finance {
+    color: #007bff;
+    font-weight: 900;
+}
+
+/* Effetto Hover sui link del Main Feed */
+.box-title:hover {
+    color: #007bff;
+    text-decoration: underline;
+}
