@@ -1,15 +1,18 @@
-<nav class="bg-white border-b-2 border-[#007bff] overflow-x-auto no-scrollbar sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto flex items-center px-4 h-[50px] gap-6 whitespace-nowrap">
-        <a href="#" class="nav-category active" data-category="bonus">Bonus</a>
-        <a href="#" class="nav-category" data-category="borsa">Borsa</a>
-        <a href="#" class="nav-category" data-category="business">Business Stories</a>
-        <a href="#" class="nav-category" data-category="crypto">Crypto</a>
-        <a href="#" class="nav-category" data-category="daily">Daily</a>
-        <a href="#" class="nav-category" data-category="economia">Economia</a>
+<nav class="bg-white border-b-2 border-[#007bff] sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center px-4 py-3 gap-6">
         
-        <div class="h-4 w-px bg-gray-200 mx-2"></div>
-        <a href="#" class="nav-category text-[#007bff] font-black uppercase text-[10px] tracking-widest" id="filter-high-conviction">
-            High Conviction
-        </a>
+        <div class="relative w-full md:w-80">
+            <input type="text" id="asset-search" placeholder="Cerca Assets (es. BTC)..." 
+                   class="w-full bg-[#f0f2f5] border-none rounded-md px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[#007bff]/20">
+            <div id="search-suggestions" class="absolute w-full bg-white border border-gray-200 mt-1 rounded-md shadow-xl hidden z-50"></div>
+        </div>
+
+        <div class="flex items-center gap-3 overflow-x-auto no-scrollbar whitespace-nowrap">
+            <button class="btn-worldy active" data-filter="all">Tutto</button>
+            <button class="btn-worldy" data-filter="borsa">Borsa</button>
+            <button class="btn-worldy" data-filter="crypto">Crypto</button>
+            <div class="h-4 w-px bg-gray-200 mx-2"></div>
+            <button id="nav-high-conviction" class="text-[#007bff] font-black text-[10px] uppercase tracking-widest cursor-pointer">High Conviction</button>
+        </div>
     </div>
 </nav>
