@@ -1,150 +1,21 @@
-<!DOCTYPE html>
-<html lang="it">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#1f2937">
-    <title>Pragmatic Intel</title>
-    <link rel="manifest" href="manifest.json">
-    
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/terminal.css">
-    
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" async></script>
-</head>
-
-<body class="bg-gray-900 text-gray-100 h-screen flex flex-col font-sans overflow-hidden">
-
-    <header class="h-16 bg-gray-800 border-b border-gray-700 flex justify-between items-center px-4 z-50 sticky top-0 shrink-0">
-        <div class="flex items-center gap-3">
-            <button id="btn-toggle-filters" class="p-2 text-gray-400 hover:text-white transition-colors cursor-pointer">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-width="2"/></svg>
-            </button>
-            <h1 class="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400 tracking-tight">
-                Pragmatic Intel
-            </h1>
-        </div>
-        <div class="flex items-center gap-2 bg-gray-900/50 px-3 py-1 rounded-full border border-gray-700">
-            <span class="text-[9px] font-black text-gray-500 uppercase tracking-tighter">Live Terminal</span>
-            <div id="status-indicator" class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-md"></div>
-        </div>
+<body class="bg-[#0B0F19] text-gray-100 h-screen flex flex-col font-sans overflow-hidden">
+    <header class="h-16 bg-[#111827] border-b border-gray-800 flex justify-between items-center px-4 z-40">
+        <button id="btn-toggle-filters" class="p-2 bg-gray-800 border border-gray-700 rounded-lg">
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 12h8m-8 6h16" stroke-width="2"/></svg>
+        </button>
+        <h1 class="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">Pragmatic Intel</h1>
+        <div id="status-indicator" class="w-2 h-2 rounded-full bg-red-500"></div>
     </header>
 
     <main class="flex-1 relative flex overflow-hidden">
+        <div id="sidebar-mount"></div>
         
-        <aside id="sidebar-filters" class="slide-panel slide-panel-left absolute inset-y-0 left-0 w-72 bg-gray-800 border-r border-gray-700 p-6 flex flex-col shadow-2xl overflow-y-auto no-scrollbar">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-xs font-bold text-gray-500 uppercase tracking-[0.2em]">Smart Filters</h2>
-                <button id="btn-close-filters" class="text-gray-400 hover:text-white text-xl p-2">✕</button>
-            </div>
-            
-            <div class="space-y-6">
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 uppercase block mb-2">Ricerca Ticker</label>
-                    <input type="text" id="search-ticker" placeholder="es. US100..." class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm focus:border-blue-500 outline-none">
-                </div>
-                
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 uppercase block mb-2">Fonti</label>
-                    <div class="space-y-2 text-sm text-gray-300">
-                        <label class="flex items-center gap-2"><input type="checkbox" checked class="accent-blue-500"> Fed / BCE</label>
-                        <label class="flex items-center gap-2"><input type="checkbox" checked class="accent-blue-500"> Truth Social</label>
-                        <label class="flex items-center gap-2"><input type="checkbox" checked class="accent-blue-500"> YouTube Analysis</label>
-                    </div>
-                </div>
-
-                <div class="pt-4 border-t border-gray-700">
-                    <label class="flex items-center justify-between text-sm text-gray-300 cursor-pointer">
-                        <span class="font-bold">Solo Confidenza > 8</span>
-                        <input type="checkbox" id="filter-high-conviction" class="w-4 h-4 accent-emerald-500">
-                    </label>
-                </div>
-            </div>
-        </aside>
-
-        <section id="main-feed" class="flex-1 h-full overflow-y-auto no-scrollbar bg-gray-900 relative">
-            <div class="max-w-2xl mx-auto p-4 sm:p-8 pb-32">
-                
-                <div class="flex items-center justify-between mb-8 border-b border-gray-800 pb-4 sticky top-0 bg-gray-900/90 backdrop-blur-sm z-10 pt-2">
-                    <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">Ultime 24 Ore</h3>
-                </div>
-                
-                <div id="feed-container" class="space-y-6">
-                    <div class="text-center py-20" id="feed-loader">
-                        <p class="text-gray-600 text-sm font-mono tracking-wide">Sincronizzazione mercato in corso...</p>
-                    </div>
-                </div>
-            </div>
+        <section class="flex-1 flex items-center justify-center text-gray-700 font-mono text-xs uppercase tracking-widest">
+            Feed Ready
         </section>
 
-        <aside id="asset-control-panel" class="slide-panel slide-panel-right absolute inset-y-0 right-0 w-full sm:w-[450px] bg-gray-800 border-l border-gray-700 shadow-2xl flex flex-col">
-            <div class="p-5 border-b border-gray-700 flex justify-between items-center bg-gray-800/50 backdrop-blur-md">
-                <h2 id="panel-ticker" class="text-3xl font-black text-blue-400 tracking-tighter">--</h2>
-                <button id="btn-close-panel" class="w-10 h-10 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-full transition-colors text-gray-400">✕</button>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
-                
-                <div>
-                    <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Executive Summary AI</h3>
-                    <p id="panel-summary" class="text-sm text-gray-300 leading-relaxed border-l-2 border-gray-600 pl-3">In attesa di dati...</p>
-                </div>
-
-                <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 text-center">
-                    <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-1">Consenso Matematico</h3>
-                    <div id="panel-consensus" class="text-2xl font-black text-gray-400 tracking-tight">--</div>
-                </div>
-
-                <button id="btn-mt5-live" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-95">
-                    ⚡ Live MT5 Check
-                </button>
-                
-            </div>
-        </aside>
-
         <div id="overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 hidden transition-opacity duration-300"></div>
-
     </main>
 
-    <template id="tpl-macro-cluster">
-        <div class="macro-card bg-gray-800 border-l-4 border-purple-500 p-5 rounded-xl shadow-md mb-6">
-            <div class="flex items-center gap-2 mb-3">
-                <span class="macro-source-icon bg-purple-500/20 text-purple-400 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-tighter">FONTE</span>
-            </div>
-            <h4 class="macro-title font-black text-base text-white mb-2 leading-tight">Titolo Evento</h4>
-            <p class="macro-summary text-sm text-gray-400 mb-4 leading-relaxed">Riassunto AI dell'evento.</p>
-            <div class="macro-chips flex flex-wrap gap-2 pt-3 border-t border-gray-700/50"></div>
-        </div>
-    </template>
-
-    <template id="tpl-asset-specific">
-        <div class="asset-card bg-gray-800 border border-gray-700 p-5 rounded-xl shadow-md mb-6 hover:border-blue-500/50 transition-colors cursor-pointer">
-            <div class="flex justify-between items-start mb-4">
-                <h4 class="asset-ticker font-black text-2xl text-blue-400 tracking-tighter">TICKER</h4>
-                <div class="asset-confidence bg-gray-900 text-[10px] font-bold text-gray-400 px-2 py-1 rounded border border-gray-700">Conf: -/10</div>
-            </div>
-            
-            <div class="grid grid-cols-3 gap-2 text-center bg-gray-900 rounded-lg p-2 border border-gray-700/50">
-                <div>
-                    <span class="block text-[8px] text-gray-500 uppercase font-bold mb-1">Breve</span>
-                    <span class="asset-short text-xs font-bold text-gray-400">--</span>
-                </div>
-                <div class="border-l border-r border-gray-700/50">
-                    <span class="block text-[8px] text-gray-500 uppercase font-bold mb-1">Medio</span>
-                    <span class="asset-medium text-xs font-bold text-gray-400">--</span>
-                </div>
-                <div>
-                    <span class="block text-[8px] text-gray-500 uppercase font-bold mb-1">Lungo</span>
-                    <span class="asset-long text-xs font-bold text-gray-400">--</span>
-                </div>
-            </div>
-        </div>
-    </template>
-
-    <script src="js/db.js"></script>
-    <script src="js/ui.js"></script>
     <script src="js/app.js"></script>
-    
 </body>
-</html>

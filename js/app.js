@@ -1,42 +1,37 @@
+/**
+ * APP.JS: Caricamento dinamico dei pilastri
+ */
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("APP: Avvio..."); //
+    const mount = document.getElementById('sidebar-mount');
 
-    const statusIndicator = document.getElementById('status-indicator');
-    const overlay = document.getElementById('overlay');
+    try {
+        // 1. Fetch del file esterno
+        const response = await fetch('components/sidebar.html');
+        const html = await response.text();
+        
+        // 2. Iniezione nel DOM
+        mount.innerHTML = html;
+        console.log("APP: Sidebar caricata con successo.");
+
+        // 3. Aggancio eventi (DOPO che l'HTML è stato inserito)
+        initSidebarEvents();
+    } catch (err) {
+        console.error("APP: Errore nel caricamento della sidebar:", err);
+    }
+});
+
+function initSidebarEvents() {
+    const btnOpen = document.getElementById('btn-toggle-filters');
+    const btnClose = document.getElementById('btn-close-filters');
     const sidebar = document.getElementById('sidebar-filters');
+    const overlay = document.getElementById('overlay');
 
-    // --- Gestione UI ---
-    document.getElementById('btn-toggle-filters')?.addEventListener('click', () => {
-        sidebar?.classList.add('open');
-        overlay?.classList.add('open', 'hidden'); // 'hidden' rimosso da Tailwind
-        overlay?.classList.remove('hidden');
-    });
-
-    const closeAll = () => {
-        document.querySelectorAll('.slide-panel').forEach(p => p.classList.remove('open'));
-        overlay?.classList.remove('open');
-        overlay?.classList.add('hidden');
+    const toggle = (show) => {
+        sidebar.classList.toggle('open', show);
+        overlay.classList.toggle('hidden', !show);
     };
 
-    document.getElementById('btn-close-filters')?.addEventListener('click', closeAll);
-    document.getElementById('btn-close-panel')?.addEventListener('click', closeAll);
-    overlay?.addEventListener('click', closeAll);
-
-    // --- Caricamento iniziale ---
-    try {
-        const data = await fetchLatestInsights();
-        if (data) {
-            UI.renderFeed(data);
-            if (statusIndicator) statusIndicator.style.backgroundColor = '#10b981'; // Verde
-        }
-    } catch (e) {
-        console.error("APP: Errore caricamento:", e); //
-    }
-
-    // --- Real-time ---
-    sbClient.channel('market-changes')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'market_insights' }, (payload) => {
-            console.log("APP: Nuovo dato! Aggiorno..."); //
-            location.reload(); 
-        }).subscribe();
-});
+    if (btnOpen) btnOpen.onclick = () => toggle(true);
+    if (btnClose) btnClose.onclick = () => toggle(false);
+    if (overlay) overlay.onclick = () => toggle(false);
+}

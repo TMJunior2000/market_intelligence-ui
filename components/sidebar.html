@@ -1,0 +1,51 @@
+<aside id="sidebar-filters" class="slide-panel slide-panel-left absolute inset-y-0 left-0 w-[340px] bg-[#111827] border-r border-gray-800 p-6 flex flex-col shadow-2xl z-50 overflow-y-auto no-scrollbar">
+    
+    <div class="flex justify-between items-center mb-8 pb-4 border-b border-gray-800">
+        <h2 class="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
+            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+            Smart Filters
+        </h2>
+        <button id="btn-close-filters" class="text-gray-500 hover:text-white bg-gray-800 rounded-md p-1.5 transition-colors cursor-pointer">✕</button>
+    </div>
+
+    <div class="space-y-8 flex-1">
+        <div>
+            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-3">Ricerca Rapida</label>
+            <input type="text" id="search-ticker" placeholder="Es. US100, EURUSD..." 
+                   class="w-full bg-gray-900 border border-gray-800 text-white rounded-lg px-4 py-3 text-sm focus:border-blue-500 outline-none transition-all placeholder-gray-600">
+        </div>
+
+        <div>
+            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-3">Isola Fonti</label>
+            <div class="space-y-3">
+                <label class="flex items-center gap-3 p-3 bg-gray-900/30 border border-gray-800 rounded-lg cursor-pointer hover:border-gray-600">
+                    <input type="checkbox" checked class="w-4 h-4 accent-blue-500 bg-gray-800">
+                    <span class="text-sm font-medium text-gray-300 uppercase tracking-tight">🏦 Fed / BCE (Macro)</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 bg-gray-900/30 border border-gray-800 rounded-lg cursor-pointer hover:border-gray-600">
+                    <input type="checkbox" checked class="w-4 h-4 accent-purple-500 bg-gray-800">
+                    <span class="text-sm font-medium text-gray-300 uppercase tracking-tight">🦅 Truth Social (Trump)</span>
+                </label>
+            </div>
+        </div>
+
+        <div>
+            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-3">Mercato</label>
+            <select class="w-full bg-gray-900 border border-gray-800 text-white rounded-lg px-4 py-3 text-sm outline-none focus:border-blue-500">
+                <option value="ALL">Tutti i mercati</option>
+                <option value="FOREX">Forex</option>
+                <option value="INDICES">Indici</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="mt-10 pt-6 border-t border-gray-800">
+        <label class="flex items-center justify-between cursor-pointer p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl hover:bg-emerald-500/10 transition-colors">
+            <div>
+                <span class="block text-sm font-black text-emerald-400">High Conviction</span>
+                <span class="block text-[10px] text-gray-400 mt-1 uppercase tracking-wider">Solo confidenza > 8</span>
+            </div>
+            <input type="checkbox" id="filter-confidence" class="w-5 h-5 accent-emerald-500">
+        </label>
+    </div>
+</aside>
