@@ -12,13 +12,13 @@ const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 const DB = {
     // Verifica lo stato della connessione
     async checkConnection() {
-        const { data, error } = await supabaseCleint.from('assets').select('ticker').limit(1);
+        const { data, error } = await sbClient.from('assets').select('ticker').limit(1);
         return !error;
     },
 
     // Prende le card di tipo MACRO_EVENT (Ultime 50)
     async getMacroEvents() {
-        const { data, error } = await supabaseCleint
+        const { data, error } = await sbClient
             .from('market_insights')
             .select('*')
             .eq('insight_type', 'MACRO_EVENT')
@@ -30,7 +30,7 @@ const DB = {
 
     // Prende il cruscotto aggregato degli asset
     async getAssetConsensus() {
-        const { data, error } = await supabaseCleint
+        const { data, error } = await sbClient
             .from('asset_consensus')
             .select('*')
             .order('average_confidence', { ascending: false });
@@ -40,7 +40,7 @@ const DB = {
 
     // Prende la timeline storica di un singolo asset
     async getAssetTimeline(ticker) {
-        const { data, error } = await supabaseCleint
+        const { data, error } = await sbClient
             .from('market_insights')
             .select('summary, sentiment_short, confidence, id')
             .eq('asset_ticker', ticker)
