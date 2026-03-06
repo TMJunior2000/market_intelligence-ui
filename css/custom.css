@@ -1,20 +1,24 @@
-/* Animazione Sidebar */
-#sidebar-filters.open {
-    transform: translateX(0);
+/* Stile Link Categorie Navbar */
+.nav-category {
+    font-size: 13px;
+    font-weight: 700;
+    color: #495057;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    cursor: pointer;
 }
 
-/* Scrollbar invisibile stile tecnico */
+.nav-category:hover, .nav-category.active {
+    color: #007bff;
+}
+
+/* Scrollbar invisibile per la nav su mobile */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Stile per i termini evidenziati nelle card (che faremo nel feed) */
-.bold-finance {
-    color: #007bff;
-    font-weight: 900;
-}
-
-/* Effetto Hover sui link del Main Feed */
-.box-title:hover {
-    color: #007bff;
-    text-decoration: underline;
+/* Griglia Card Worldy */
+.grid-worldy {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 30px;
 }

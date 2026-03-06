@@ -8,39 +8,37 @@
     <link rel="stylesheet" href="css/custom.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" async></script>
 </head>
-<body class="bg-[#f8f9fa] text-[#1a1a1a] h-screen flex flex-col font-sans overflow-hidden">
+<body class="bg-[#f8f9fa] text-[#1a1a1a] flex flex-col font-sans overflow-x-hidden">
 
-    <header class="h-[70px] bg-white border-b-2 border-[#007bff] flex justify-between items-center px-6 z-50 shrink-0 shadow-sm">
+    <header class="h-[70px] bg-white border-b border-[#e9ecef] flex justify-between items-center px-6 z-50 shrink-0">
         <div class="flex items-center gap-6">
-            <button id="btn-toggle-filters" class="p-2 bg-[#f0f2f5] rounded-md hover:bg-gray-200 transition-colors cursor-pointer">
-                <div class="w-5 h-0.5 bg-[#333] mb-1"></div>
-                <div class="w-5 h-0.5 bg-[#333] mb-1"></div>
-                <div class="w-5 h-0.5 bg-[#333]"></div>
-            </button>
-            
             <div class="flex items-baseline gap-1">
                 <span class="text-xl font-[900] tracking-tighter text-black uppercase">Pragmatic <span class="text-[#007bff]">Finance</span></span>
                 <span class="bg-[#ff923b] text-white text-[9px] font-black px-1.5 py-0.5 rounded-sm uppercase">Beta</span>
             </div>
         </div>
-
-        <div class="flex items-center gap-2">
-            <div id="status-indicator" class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]"></div>
+        <div class="flex items-center gap-4">
+             <div id="status-indicator" class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></div>
         </div>
     </header>
 
-    <main class="flex-1 relative flex overflow-hidden">
-        <div id="sidebar-mount"></div>
+    <nav class="bg-white border-b-2 border-[#007bff] overflow-x-auto no-scrollbar sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto flex items-center px-4 h-[50px] gap-6 whitespace-nowrap">
+            <a href="#" class="nav-category active">Bonus</a>
+            <a href="#" class="nav-category">Borsa</a>
+            <a href="#" class="nav-category">Business Stories</a>
+            <a href="#" class="nav-category">Crypto</a>
+            <a href="#" class="nav-category">Daily</a>
+            <a href="#" class="nav-category">Economia</a>
+            <a href="#" class="nav-category border-l border-gray-200 pl-6 text-[#007bff] font-black uppercase text-[10px]">High Conviction</a>
+        </div>
+    </nav>
 
-        <section id="main-feed" class="flex-1 h-full overflow-y-auto p-6 md:p-10">
-            <div id="feed-container" class="max-w-5xl mx-auto">
-                <div class="text-center py-20 text-gray-400 font-bold uppercase text-[10px] tracking-widest">
-                    Sincronizzazione contenuti...
+    <main class="flex-1">
+        <section id="main-feed" class="max-w-6xl mx-auto p-6 md:p-10">
+            <div id="feed-container">
                 </div>
-            </div>
         </section>
-
-        <div id="overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 hidden transition-opacity duration-300"></div>
     </main>
 
     <script src="js/app.js"></script>
