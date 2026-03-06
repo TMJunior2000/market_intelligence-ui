@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1f2937">
+    <title>Pragmatic Intel</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-900 text-white h-screen flex flex-col font-sans overflow-hidden">
+
+    <header class="bg-gray-800 p-4 shadow-md flex justify-between items-center z-10 border-b border-gray-700">
+        <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
+            Pragmatic Intel
+        </h1>
+        <div id="status-indicator" class="w-3 h-3 bg-red-500 rounded-full" title="Disconnesso"></div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-4 pb-20 relative">
+        
+        <section id="view-macro" class="block space-y-4">
+            <h2 class="text-lg font-semibold text-gray-300 border-b border-gray-700 pb-2">Radar Politica Monetaria</h2>
+            <div id="macro-container" class="space-y-4">
+                <p class="text-gray-500 text-sm text-center mt-10">Caricamento dati Macro...</p>
+            </div>
+        </section>
+
+        <section id="view-assets" class="hidden space-y-4">
+            <h2 class="text-lg font-semibold text-gray-300 border-b border-gray-700 pb-2">Consenso Operativo</h2>
+            <div id="asset-container" class="space-y-4">
+                <p class="text-gray-500 text-sm text-center mt-10">Caricamento Consenso Asset...</p>
+            </div>
+        </section>
+
+        <section id="view-filters" class="hidden space-y-4">
+            <h2 class="text-lg font-semibold text-gray-300 border-b border-gray-700 pb-2">Impostazioni & Filtri</h2>
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                <label class="block text-sm text-gray-400 mb-2">Mostra solo Confidenza > 7</label>
+                <input type="checkbox" id="filter-confidence" class="w-5 h-5 accent-blue-500">
+            </div>
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                <p class="text-sm text-gray-400 mb-2">Connessione MT5 Live</p>
+                <button onclick="alert('Funzione MT5 Live in arrivo!')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded">
+                    Test Connessione Broker
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <div id="asset-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-95 z-30 flex flex-col pt-10 px-4 pb-24 overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h2 id="modal-ticker" class="text-3xl font-bold text-blue-400">TICKER</h2>
+            <button id="close-modal" class="text-gray-400 hover:text-white bg-gray-800 rounded-full p-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-4 shadow-lg">
+            <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">Executive Summary (AI)</h3>
+            <p id="modal-summary" class="text-sm text-gray-200 leading-relaxed">...</p>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-4 flex justify-between text-center">
+            <div><p class="text-xs text-gray-500">Breve</p><p id="modal-short" class="font-bold text-sm">-</p></div>
+            <div><p class="text-xs text-gray-500">Medio</p><p id="modal-medium" class="font-bold text-sm">-</p></div>
+            <div><p class="text-xs text-gray-500">Lungo</p><p id="modal-long" class="font-bold text-sm">-</p></div>
+        </div>
+        <h3 class="text-sm font-bold text-gray-400 mt-4 mb-2 border-b border-gray-700 pb-1">Timeline Analisi</h3>
+        <div id="modal-timeline" class="space-y-3"></div>
+    </div>
+
+    <nav class="bg-gray-800 border-t border-gray-700 fixed bottom-0 w-full flex justify-around p-2 z-20 pb-safe">
+        <button id="nav-macro" class="nav-btn active flex flex-col items-center text-blue-400 w-1/3 py-2">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H15"></path></svg>
+            <span class="text-[10px] mt-1 font-semibold">Macro</span>
+        </button>
+        <button id="nav-assets" class="nav-btn flex flex-col items-center text-gray-500 hover:text-blue-300 w-1/3 py-2">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            <span class="text-[10px] mt-1 font-medium">Asset</span>
+        </button>
+        <button id="nav-filters" class="nav-btn flex flex-col items-center text-gray-500 hover:text-blue-300 w-1/3 py-2">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+            <span class="text-[10px] mt-1 font-medium">Filtri</span>
+        </button>
+    </nav>
+
+    <script src="js/db.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

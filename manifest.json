@@ -1,0 +1,16 @@
+{
+  "name": "Pragmatic Intel",
+  "short_name": "Intel",
+  "description": "Terminale di Market Intelligence",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1f2937",
+  "theme_color": "#1f2937",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2642/2642503.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
