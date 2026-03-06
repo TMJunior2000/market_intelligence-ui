@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
         // 1. Caricamento della Navbar Separata
-        const response = await fetch('components/secondary-nav.html');
+        const response = await fetch('components/nav.html');
         if (!response.ok) throw new Error("Componente Navbar non trovato");
         
         navMount.innerHTML = await response.text();
