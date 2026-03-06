@@ -1,15 +1,17 @@
-/* Definiamo solo il MOVIMENTO che Tailwind non gestisce bene via classi statiche */
+/* Logica dei pannelli scorrevoli */
 .slide-panel {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s;
     visibility: hidden;
-    z-index: 50;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.4s;
 }
 
 .slide-panel.open {
-    transform: translateX(0) !important;
     visibility: visible;
+    transform: translateX(0) !important;
 }
 
-/* Nascondi scrollbar su Xiaomi mantenendo lo scroll attivo */
+.slide-panel-left { transform: translateX(-100%); }
+.slide-panel-right { transform: translateX(100%); }
+
+/* Nascondi scrollbar per pulizia terminale */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
