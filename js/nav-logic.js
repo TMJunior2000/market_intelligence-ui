@@ -47,17 +47,18 @@ function initAssetSearch() {
 }
 
 function renderSuggestions(assets, container) {
-  container.innerHTML = assets.map(a => `
-    <div class="suggestion-item p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 flex justify-between items-center" 
-         onclick="window.location.href='asset.html?ticker=${a.ticker}'">
-      <div>
-        <span class="font-bold text-black">${a.ticker}</span>
-        <span class="text-[10px] text-gray-400 ml-2 uppercase">${a.name_full || ''}</span>
-      </div>
-      <span class="text-[9px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500 font-bold">${a.asset_group || 'ASSET'}</span>
-    </div>
-  `).join('');
-  container.classList.remove('hidden');
+    container.innerHTML = assets.map(a => `
+        <div class="suggestion-item" onclick="window.location.href='asset.html?ticker=${a.ticker}'">
+            <div style="display: flex; flex-direction: column;">
+                <span class="suggestion-ticker">${a.ticker}</span>
+                <span style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                    ${a.name_full || ''}
+                </span>
+            </div>
+            <span class="suggestion-group">${a.asset_group || 'ASSET'}</span>
+        </div>
+    `).join('');
+    container.classList.remove('hidden');
 }
 
 function initNavFilters() {
