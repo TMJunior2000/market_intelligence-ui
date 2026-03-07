@@ -91,14 +91,6 @@ img { display: block; max-width: 100%; }
   margin-bottom: 2px;
 }
 
-.navbar-brand .logo-sub {
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
 /* Impedisce al logo di comportarsi graficamente come un pulsante grigio */
 .navbar-brand.filter-btn {
     border: none !important;
