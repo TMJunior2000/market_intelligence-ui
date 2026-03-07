@@ -587,6 +587,20 @@ img { display: block; max-width: 100%; }
   .feed-grid { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 850px) {
+    .asset-hero-content {
+        grid-template-columns: 1fr !important;
+        padding: 24px !important;
+        gap: 32px !important;
+    }
+    .sentiment-matrix {
+        border-left: none !important;
+        border-top: 1.5px solid var(--border);
+        padding-left: 0 !important;
+        padding-top: 24px;
+    }
+}
+
 /* ---- UTILS ---- */
 .accent { color: var(--accent); }
 .bold-finance { font-weight: 700; }

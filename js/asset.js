@@ -1,8 +1,7 @@
 /**
- * ASSET.JS - Gestisce la visualizzazione del singolo Asset e del suo storico
+ * ASSET.JS - Analisi verticale del singolo ticker
  */
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Recupera il ticker dall'URL (es: ?ticker=AAPL)
     const params = new URLSearchParams(window.location.search);
     const ticker = params.get('ticker');
 
@@ -19,50 +18,80 @@ async function loadAssetData(ticker) {
     const hero = document.getElementById('asset-hero');
 
     try {
-        // 2. Recupera Info Asset
-        const { data: asset, error: assetErr } = await db
-            .from('assets')
-            .select('*')
-            .eq('ticker', ticker)
-            .single();
-
-        if (assetErr) throw assetErr;
-
-        // Render Hero
-        hero.innerHTML = `
-            <div class="asset-hero-content" style="background: white; padding: 32px; border: 1.5px solid var(--border); border-radius: var(--radius-lg);">
-                <span class="suggestion-ticker" style="font-size: 18px; padding: 6px 12px;">${asset.ticker}</span>
-                <h1 style="font-family: var(--font-display); font-size: 42px; margin-top: 12px;">${asset.name_full}</h1>
-                <p style="color: var(--text-secondary); margin-top: 8px; font-weight: 500;">Settore: ${asset.asset_group}</p>
-            </div>
-        `;
-
-        // 3. Recupera Storico Insights (Tutte le news che citano questo ticker)
-        const { data: insights, error: feedErr } = await db
+        // Query Join: Recupera l'asset e tutti i suoi insight (con feed e fonti)
+        const { data: insights, error } = await db
             .from('market_insights')
-            .select(`*, content_feed(*, sources(*)), assets(asset_group)`)
-            .eq('asset_ticker', ticker) // Qui potremmo espandere la ricerca se necessario
+            .select(`
+                *,
+                assets (*),
+                content_feed (*, sources (*))
+            `)
+            .eq('asset_ticker', ticker)
             .order('id', { ascending: false });
 
-        if (feedErr) throw feedErr;
-
-        // Render Grid (Usiamo la funzione buildCard definita in feed.js o duplicata qui)
-        document.getElementById('asset-count').textContent = `${insights.length} insight${insights.length !== 1 ? 's' : ''}`;
-        
-        if (insights.length === 0) {
-            grid.innerHTML = `<div class="state-msg">Nessuna analisi storica trovata per questo asset.</div>`;
+        if (error) throw error;
+        if (!insights || insights.length === 0) {
+            hero.innerHTML = `<div class="state-msg">Asset non trovato o nessun dato disponibile.</div>`;
+            grid.innerHTML = '';
             return;
         }
 
+        const asset = insights[0].assets;
+        const lastInsight = insights[0]; // Il più recente per il sentiment attuale
+
+        // 1. Render Hero con Dati Tecnici e Sentiment Matrix
+        renderHero(hero, asset, lastInsight);
+
+        // 2. Render Feed Storico
+        grid.innerHTML = '';
+        document.getElementById('asset-count').textContent = `${insights.length} insight${insights.length !== 1 ? 's' : ''}`;
+        
         insights.forEach((insight, i) => {
-            // Nota: qui dovresti avere accesso a buildCard. 
-            // Se non l'hai esportata, puoi incollarla qui o caricarla via script comune.
-            const card = buildCard(insight, i); 
+            const card = buildCard(insight, i); // Utilizza la funzione centralizzata in ui-utils.js
             grid.appendChild(card);
         });
 
     } catch (err) {
-        console.error("Errore caricamento asset:", err);
-        hero.innerHTML = `<div class="state-msg">Errore nel caricamento dell'asset.</div>`;
+        console.error("Errore:", err);
+        grid.innerHTML = `<div class="state-msg">Si è verificato un errore nel caricamento dei dati.</div>`;
     }
+}
+
+function renderHero(container, asset, insight) {
+    container.innerHTML = `
+        <div class="asset-hero-content" style="background: white; padding: 40px; border: 1.5px solid var(--border); border-radius: var(--radius-lg); display: grid; grid-template-columns: 1fr 350px; gap: 60px; align-items: center;">
+            <div class="hero-info">
+                <span class="suggestion-ticker" style="font-size: 14px; background: var(--text-primary); color: white; padding: 4px 10px; border-radius: 4px;">${asset.ticker}</span>
+                <h1 style="font-family: var(--font-display); font-size: 48px; font-weight: 900; margin: 16px 0 8px; color: var(--text-primary); line-height: 1.1;">${asset.name_full}</h1>
+                <div style="display: flex; gap: 24px; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">
+                    <span><strong style="color: var(--text-secondary);">Gruppo:</strong> ${asset.asset_group}</span>
+                    <span><strong style="color: var(--text-secondary);">Profit:</strong> ${asset.currency_profit}</span>
+                    <span><strong style="color: var(--text-secondary);">Size:</strong> ${asset.contract_size}</span>
+                </div>
+            </div>
+            
+            <div class="sentiment-matrix" style="border-left: 1.5px solid var(--border); padding-left: 40px; display: flex; flex-direction: column; gap: 20px;">
+                <h4 style="font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px;">Market Sentiment</h4>
+                ${renderSentimentRow('Short Term', insight.sentiment_short)}
+                ${renderSentimentRow('Medium Term', insight.sentiment_medium)}
+                ${renderSentimentRow('Long Term', insight.sentiment_long)}
+            </div>
+        </div>
+    `;
+}
+
+function renderSentimentRow(label, sentiment) {
+    const s = (sentiment || 'UNKNOWN').toUpperCase();
+    let color = 'var(--text-muted)';
+    let bg = 'var(--bg-subtle)';
+
+    if (s === 'BULLISH') { color = 'var(--bullish)'; bg = 'var(--bullish-bg)'; }
+    if (s === 'BEARISH') { color = 'var(--bearish)'; bg = 'var(--bearish-bg)'; }
+
+    return `
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">${label}</span>
+            <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: ${color}; background: ${bg}; padding: 4px 12px; border-radius: 4px; min-width: 85px; text-align: center;">${s}</span>
+        </div>
+    `;
 }

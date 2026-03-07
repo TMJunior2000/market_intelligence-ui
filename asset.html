@@ -1,37 +1,36 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asset Analysis — Pragmatic Finance</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
     <div data-component="navbar"></div>
 
     <main class="page-container">
-        <a href="index.html" class="back-link" style="display: flex; align-items: center; gap: 8px; margin-bottom: 24px; font-weight: 600; color: var(--text-secondary);">
-            <i class="fas fa-arrow-left"></i> Torna al Feed
+        <a href="index.html" class="back-link" style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 32px; font-weight: 600; color: var(--text-secondary); font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">
+            <i class="fas fa-arrow-left"></i> Torna al Feed principale
         </a>
 
-        <section id="asset-hero" class="asset-hero-container">
-            <div class="state-msg"><div class="spinner"></div></div>
-        </section>
+        <section id="asset-hero"></section>
 
-        <div class="section-header" style="margin-top: 48px;">
+        <div class="section-header" style="margin-top: 64px;">
             <h2 class="section-title">Storico Analisi</h2>
             <span class="section-count" id="asset-count">0 insights</span>
         </div>
 
         <div class="feed-grid" id="asset-feed-grid">
-            </div>
+            <div class="state-msg"><div class="spinner"></div></div>
+        </div>
     </main>
 
     <script src="js/config.js"></script>
     <script src="js/ui-utils.js"></script>
+    <script src="js/nav-logic.js"></script> <script src="js/asset.js"></script>
     <script src="js/components.js"></script>
-    <script src="js/asset.js"></script>
 </body>
 </html>
