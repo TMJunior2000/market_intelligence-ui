@@ -96,10 +96,17 @@ function buildCard(insight, index) {
     const card = document.createElement('article');
     card.className = 'insight-card';
 
-    card.dataset.assetGroup = insight.asset_group || ''; 
+    // --- LOGICA MULTI-GRUPPO ---
+    // Trasformiamo l'array all_groups in una stringa separata da virgole.
+    // Questo permette a nav-logic.js di trovare la card anche per gli asset secondari.
+    const groupsString = (insight.all_groups || [insight.asset_group || '']).join(',');
+    card.dataset.assetGroups = groupsString; 
+    
+    // Manteniamo questi per compatibilità e per filtri specifici
     card.dataset.confidence = insight.confidence || 0;
     card.dataset.insightType = insight.insight_type;
 
+    // Animazione a cascata
     card.style.animationDelay = `${Math.min(index * 30, 300)}ms`;
 
     const isMacro = insight.insight_type === 'MACRO_EVENT';
@@ -107,7 +114,7 @@ function buildCard(insight, index) {
         ? new Date(insight.content_feed.published_at).toLocaleDateString('it-IT', {day:'2-digit', month:'short'}) 
         : '';
 
-    // Genera la lista di ticker aggregati
+    // Genera la lista di tutti i ticker aggregati (es: XAUUSD, EURUSD, US500)
     const tickerButtons = (insight.all_tickers || [insight.asset_ticker || 'MACRO'])
         .map(t => {
             const badgeClass = isMacro ? 'macro-badge' : 'ticker-badge';
@@ -131,5 +138,6 @@ function buildCard(insight, index) {
             <span class="card-date">${pubDate}</span>
         </div>
     `;
+    
     return card;
 }
