@@ -23,15 +23,19 @@ function initAssetSearch() {
 
     let debounceTimer;
 
+    // Gestione Input (Digitazione e Cancellazione)
     input.addEventListener('input', () => {
         clearTimeout(debounceTimer);
         const query = input.value.trim().toUpperCase();
 
+        // Se cancelli tutto o scendi sotto i 2 caratteri, nascondi subito
         if (query.length < 2) {
             suggestions.classList.add('hidden');
+            suggestions.style.display = 'none'; // Forza la sparizione
             return;
         }
 
+        // Debounce per non sovraccaricare il DB durante la cancellazione rapida
         debounceTimer = setTimeout(async () => {
             const { data, error } = await db
                 .from('assets')
@@ -41,15 +45,28 @@ function initAssetSearch() {
 
             if (data && data.length > 0) {
                 renderSuggestions(data, suggestions);
+                suggestions.style.display = 'block'; // Assicura visibilità
             } else {
                 suggestions.classList.add('hidden');
+                suggestions.style.display = 'none';
             }
         }, 200);
     });
 
+    // CHIUSURA CLICCANDO FUORI
     document.addEventListener('click', (e) => {
+        // Se il clic NON è sull'input e NON è dentro il menu suggerimenti
         if (!input.contains(e.target) && !suggestions.contains(e.target)) {
             suggestions.classList.add('hidden');
+            suggestions.style.display = 'none';
+        }
+    });
+
+    // Riapri i suggerimenti se clicchi sull'input (se c'è già testo)
+    input.addEventListener('focus', () => {
+        if (input.value.trim().length >= 2 && suggestions.innerHTML !== '') {
+            suggestions.classList.remove('hidden');
+            suggestions.style.display = 'block';
         }
     });
 }
@@ -62,7 +79,9 @@ function renderSuggestions(assets, container) {
             <span class="suggestion-group">${a.asset_group || 'ASSET'}</span>
         </div>
     `).join('');
+    
     container.classList.remove('hidden');
+    container.style.display = 'block';
 }
 
 function initNavFilters() {
