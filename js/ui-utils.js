@@ -1,5 +1,5 @@
 /**
- * UI-UTILS.JS - Funzioni condivise per l'interfaccia utente
+ * UI-UTILS.JS - Funzioni condivise per l'interfaccia utente.
  */
 
 function buildCard(insight, index) {
