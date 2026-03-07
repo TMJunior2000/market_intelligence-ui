@@ -83,33 +83,34 @@ function initNavFilters() {
         if (target.classList.contains('sub-filter-btn')) {
             const subValue = target.dataset.subgroup;
 
-            // --- NUOVA LOGICA: Gestione Sottosezioni di "TUTTO" (Scroll) ---
+            // --- LOGICA ESCLUSIVA: Gestione Sottosezioni di "TUTTO" ---
             const temporalSections = ['breaking-news', 'weekly-digest', 'macro-outlook'];
+            
             if (temporalSections.includes(subValue)) {
-                // Torna alla vista dashboard completa
-                handleLayoutTransition('all');
+                // 1. Attiva la vista dashboard e nasconde quella filtrata
+                document.getElementById('dashboard-view').style.display = 'block';
+                document.getElementById('filtered-view').style.display = 'none';
+
+                // 2. Cicla le sezioni: mostra solo quella cliccata, nasconde le altre
+                temporalSections.forEach(sectionId => {
+                    const sectionEl = document.querySelector(`[data-component="${sectionId}"]`);
+                    if (sectionEl) {
+                        sectionEl.style.display = (sectionId === subValue) ? 'block' : 'none';
+                    }
+                });
+
+                // 3. UI: Attiva il tasto "TUTTO" e torna in cima
                 updateActiveUI(document.querySelector('[data-group="all"]'));
-
-                // Scroll fluido alla sezione specifica
-                const section = document.querySelector(`[data-component="${subValue}"]`);
-                if (section) {
-                    const offset = 80; // Spazio per la navbar sticky
-                    const bodyRect = document.body.getBoundingClientRect().top;
-                    const elementRect = section.getBoundingClientRect().top;
-                    const elementPosition = elementRect - bodyRect;
-                    const offsetPosition = elementPosition - offset;
-
-                    window.scrollTo({
-                        top: offsetPosition,
-                        behavior: 'smooth'
-                    });
-                }
-                return; // Esce per non applicare filtri sugli asset
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return; 
             }
 
             // --- FILTRO ASSET STANDARD (Borsa, Forex, etc.) ---
-            const parentBtn = target.closest('.dropdown').querySelector('.filter-btn');
-            updateActiveUI(parentBtn);
+            const dropdown = target.closest('.dropdown');
+            if (dropdown) {
+                const parentBtn = dropdown.querySelector('.filter-btn');
+                updateActiveUI(parentBtn);
+            }
             
             handleLayoutTransition('sub');
             applyFilter('sub', subValue);
@@ -117,15 +118,25 @@ function initNavFilters() {
     });
 }
 
+/**
+ * Gestione Layout: Passaggio tra Dashboard e Vista Risultati
+ */
 function handleLayoutTransition(mode) {
     const dashboard = document.getElementById('dashboard-view');
     const filteredView = document.getElementById('filtered-view');
     const filteredGrid = document.getElementById('filtered-grid');
+    const temporalSections = ['breaking-news', 'weekly-digest', 'macro-outlook'];
 
     if (mode === 'all') {
         dashboard.style.display = 'block';
         filteredView.style.display = 'none';
         filteredGrid.innerHTML = ''; 
+
+        // Ripristina la visibilità di TUTTE le sezioni temporali
+        temporalSections.forEach(sectionId => {
+            const el = document.querySelector(`[data-component="${sectionId}"]`);
+            if (el) el.style.display = 'block';
+        });
     } else {
         dashboard.style.display = 'none';
         filteredView.style.display = 'block';
@@ -135,6 +146,9 @@ function handleLayoutTransition(mode) {
     }
 }
 
+/**
+ * Logica di Filtraggio Card (Client-side)
+ */
 function applyFilter(type, value) {
     const allCards = document.querySelectorAll('.insight-card');
     const filteredGrid = document.getElementById('filtered-grid');
@@ -150,7 +164,6 @@ function applyFilter(type, value) {
         let isMatch = false;
         
         if (type === 'main') {
-            // Rimosso filtro confidence >= 8. Ora mostra tutto.
             if (value === 'high-conviction' || value === 'all') {
                 isMatch = true;
             } else if (value === 'macro') {
@@ -182,6 +195,7 @@ function applyFilter(type, value) {
 }
 
 function updateActiveUI(element) {
+    if (!element) return;
     document.querySelectorAll('.filter-btn, .sub-filter-btn').forEach(b => b.classList.remove('active'));
     element.classList.add('active');
 }
