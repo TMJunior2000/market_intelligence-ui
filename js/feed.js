@@ -27,12 +27,18 @@ async function loadAllFeeds() {
             // Se è la prima volta che vediamo questa notizia, creiamo l'oggetto base
             aggregatedMap.set(key, {
                 ...item,
-                asset_group: item.assets?.asset_group || '',
+                all_groups: [item.assets?.asset_group || ''],
                 all_tickers: [item.asset_ticker] // Iniziamo la lista dei ticker
             });
         } else {
             // Se la notizia esiste già, aggiungiamo solo il nuovo ticker alla lista
             const existing = aggregatedMap.get(key);
+            const newGroup  = item.assets?.asset_group || '';
+
+            if (!existing.all_groups.includes(newGroup)) {
+                existing.all_groups.push(newGroup);
+            }
+
             if (!existing.all_tickers.includes(item.asset_ticker)) {
                 existing.all_tickers.push(item.asset_ticker);
             }

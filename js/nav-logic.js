@@ -139,19 +139,17 @@ function handleLayoutTransition(mode) {
  * Logica di Filtraggio Card (Client-side)
  */
 function applyFilter(type, value) {
-    const allCards = document.querySelectorAll('#dashboard-view .insight-card'); // Prende solo le card originali
+    const allCards = document.querySelectorAll('#dashboard-view .insight-card');
     const filteredGrid = document.getElementById('filtered-grid');
     const isMainView = (value === 'all');
     
-    // 1. Pulisce sempre la griglia dei risultati prima di iniziare
     filteredGrid.innerHTML = '';
     let count = 0;
-
-    // Usiamo un Set per evitare di aggiungere la stessa card fisica più volte
     const addedTitles = new Set();
 
     allCards.forEach(card => {
-        const cardGroup = card.dataset.assetGroup;
+        // Recuperiamo la stringa dei gruppi e trasformiamola in array
+        const cardGroups = (card.dataset.assetGroups || '').split(',');
         const insightType = card.dataset.insightType;
         const cardTitle = card.querySelector('.card-title')?.textContent;
 
@@ -164,20 +162,20 @@ function applyFilter(type, value) {
                 isMatch = (insightType === 'MACRO_EVENT');
             } else {
                 const allowed = groupMapping[value] || [];
-                isMatch = allowed.includes(cardGroup);
+                // LOGICA MULTI-GRUPPO: Verifica se almeno un gruppo della card è tra quelli permessi
+                isMatch = cardGroups.some(group => allowed.includes(group));
             }
         } else if (type === 'sub') {
-            // Filtro per sottogruppo (es. 'Equity CFD US')
-            isMatch = cardGroup.includes(value);
+            // Per i sottogruppi (es. solo 'Equity CFD US')
+            isMatch = cardGroups.includes(value);
         }
 
-        // 2. Se c'è un match e non abbiamo già aggiunto questa notizia
         if (isMatch && !addedTitles.has(cardTitle)) {
             if (!isMainView) {
                 const cardClone = card.cloneNode(true);
                 cardClone.style.display = 'flex';
                 filteredGrid.appendChild(cardClone);
-                addedTitles.add(cardTitle); // Segna il titolo come "già inserito"
+                addedTitles.add(cardTitle);
                 count++;
             } else {
                 card.style.display = 'flex'; 
