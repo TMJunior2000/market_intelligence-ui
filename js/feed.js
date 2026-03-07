@@ -10,7 +10,7 @@ document.addEventListener('componentsReady', async () => {
 async function loadAllFeeds() {
     const { data, error } = await db
         .from('market_insights')
-        .select(`*, content_feed(*, sources(*))`)
+        .select(`*, content_feed(*, sources(*)), assets(asset_group)`)
         .order('id', { ascending: false })
         .limit(100);
 
@@ -27,6 +27,7 @@ async function loadAllFeeds() {
             // Se è la prima volta che vediamo questa notizia, creiamo l'oggetto base
             aggregatedMap.set(key, {
                 ...item,
+                asset_group: item.assets?.asset_group || '',
                 all_tickers: [item.asset_ticker] // Iniziamo la lista dei ticker
             });
         } else {
@@ -88,6 +89,11 @@ function renderSection(gridId, countId, insights) {
 function buildCard(insight, index) {
     const card = document.createElement('article');
     card.className = 'insight-card';
+
+    card.dataset.assetGroup = insight.asset_group || ''; 
+    card.dataset.confidence = insight.confidence || 0;
+    card.dataset.insightType = insight.insight_type;
+
     card.style.animationDelay = `${Math.min(index * 30, 300)}ms`;
 
     const isMacro = insight.insight_type === 'MACRO_EVENT';
