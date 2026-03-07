@@ -16,16 +16,49 @@
     </div>
 
     <div class="navbar-filters">
-        <button class="filter-btn active" data-filter="all">Tutto</button>
-        <button class="filter-btn borsa-filter" data-filter="borsa">Borsa</button>
-        <button class="filter-btn crypto-filter" data-filter="crypto">Crypto</button>
-        <button class="filter-btn macro-filter" data-filter="macro">Macro</button>
+        <button class="filter-btn active" data-group="all">Tutto</button>
+
+        <div class="dropdown">
+            <button class="filter-btn" data-group="borsa">Borsa <i class="fas fa-chevron-down"></i></button>
+            <div class="dropdown-content">
+                <button class="sub-filter-btn" data-subgroup="Equity CFD US">CFD US</button>
+                <button class="sub-filter-btn" data-subgroup="Equity CFD EU">CFD EU</button>
+                <button class="sub-filter-btn" data-subgroup="Equity CFD HK">CFD HK</button>
+                <button class="sub-filter-btn" data-subgroup="Equity CFD UK">CFD UK</button>
+            </div>
+        </div>
+
+        <div class="dropdown">
+            <button class="filter-btn" data-group="forex">Forex <i class="fas fa-chevron-down"></i></button>
+            <div class="dropdown-content">
+                <button class="sub-filter-btn" data-subgroup="Forex Majors Raw">Majors</button>
+                <button class="sub-filter-btn" data-subgroup="Forex Minors Raw">Minors</button>
+                <button class="sub-filter-btn" data-subgroup="Forex Exotics Raw">Exotics</button>
+            </div>
+        </div>
+
+        <div class="dropdown">
+            <button class="filter-btn" data-group="commodities">Commodities <i class="fas fa-chevron-down"></i></button>
+            <div class="dropdown-content">
+                <button class="sub-filter-btn" data-subgroup="Commodities">Energia (Oil/Gas)</button>
+                <button class="sub-filter-btn" data-subgroup="Metals">Metalli (Gold/Silver)</button>
+                <button class="sub-filter-btn" data-subgroup="Soft Commodities">Soft (Cacao/Caffè)</button>
+            </div>
+        </div>
+
+        <div class="dropdown">
+            <button class="filter-btn" data-group="indices-bonds">Indices & Bonds <i class="fas fa-chevron-down"></i></button>
+            <div class="dropdown-content">
+                <button class="sub-filter-btn" data-subgroup="Indices">Indici</button>
+                <button class="sub-filter-btn" data-subgroup="Bonds">Obbligazioni</button>
+            </div>
+        </div>
+
+        <button class="filter-btn" data-group="crypto">Crypto</button>
         
-        <div class="navbar-divider" style="height: 20px; margin: 0 10px;"></div>
+        <div class="navbar-divider"></div>
         
-        <button id="nav-high-conviction" class="filter-btn" style="border: none; color: var(--accent);">
-            High Conviction
-        </button>
+        <button id="nav-high-conviction" class="filter-btn" data-group="high-conviction">★ High Conviction</button>
     </div>
 
     <div class="navbar-spacer"></div>
