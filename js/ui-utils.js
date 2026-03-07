@@ -1,25 +1,37 @@
 /**
- * UI-UTILS.JS - Versione con Sentiment Indicators nella Card
+ * UI-UTILS.JS - Versione con Sentiment Indicators (incluso NEUTRAL)
  */
 
 function buildCard(insight, index) {
     const card = document.createElement('article');
     card.className = 'insight-card';
 
-    // Logica Multi-Gruppo
     const groupsString = (insight.all_groups || [insight.asset_group || '']).join(',');
     card.dataset.assetGroups = groupsString; 
     
-    // Funzione interna per generare il micro-badge del sentiment
+    // Funzione interna aggiornata per includere NEUTRAL
     const getMiniSentiment = (val, label) => {
-        if (!val || val.toUpperCase() === 'UNKNOWN' || val.toUpperCase() === 'NEUTRAL') return '';
+        // Ora escludiamo solo se il valore è nullo o UNKNOWN
+        if (!val || val.toUpperCase() === 'UNKNOWN') return '';
         
-        const isBullish = val.toUpperCase() === 'BULLISH';
-        const color = isBullish ? 'var(--bullish)' : 'var(--bearish)';
-        const icon = isBullish ? 'fa-arrow-up' : 'fa-arrow-down';
-        
+        const s = val.toUpperCase();
+        let color = 'var(--text-muted)';
+        let bg = 'var(--bg-subtle)';
+        let icon = 'fa-minus'; // Icona neutra (trattino)
+
+        if (s === 'BULLISH') { 
+            color = 'var(--bullish)'; 
+            bg = 'var(--bullish-bg)'; 
+            icon = 'fa-arrow-up';
+        } else if (s === 'BEARISH') { 
+            color = 'var(--bearish)'; 
+            bg = 'var(--bearish-bg)'; 
+            icon = 'fa-arrow-down';
+        }
+        // Se è NEUTRAL, mantiene i valori di default (grigio/minus)
+
         return `
-            <div title="${label}: ${val}" style="display: flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 800; color: ${color}; background: ${isBullish ? 'var(--bullish-bg)' : 'var(--bearish-bg)'}; padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono);">
+            <div title="${label}: ${s}" style="display: flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 800; color: ${color}; background: ${bg}; padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono);">
                 <i class="fas ${icon}"></i> ${label[0]}
             </div>
         `;
