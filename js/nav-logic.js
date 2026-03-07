@@ -175,6 +175,9 @@ function applyFilter(type, value) {
         if (type === 'main') {
             if (value === 'all') {
                 isMatch = true;
+            } else if (value === 'high-conviction') {
+                const confidence = parseInt(card.dataset.confidence) || '0';
+                isMatch = confidence >= 9;
             } else if (value === 'macro') {
                 isMatch = (insightType === 'MACRO_EVENT');
             } else {
