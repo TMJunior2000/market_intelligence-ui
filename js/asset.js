@@ -1,59 +1,49 @@
 /**
- * ASSET.JS - Analisi verticale del singolo ticker
+ * ASSET.JS - Versione SPA
+ * Rendering dei dati tecnici e del sentiment matrix
  */
-document.addEventListener('DOMContentLoaded', async () => {
-    const params = new URLSearchParams(window.location.search);
-    const ticker = params.get('ticker');
-
-    if (!ticker) {
-        window.location.href = 'index.html';
-        return;
-    }
-
-    await loadAssetData(ticker);
-});
 
 async function loadAssetData(ticker) {
     const grid = document.getElementById('asset-feed-grid');
     const hero = document.getElementById('asset-hero');
 
+    // Reset e Spinner
+    grid.innerHTML = '<div class="state-msg"><div class="spinner"></div></div>';
+    hero.innerHTML = '';
+
     try {
-        // Query Join: Recupera l'asset e tutti i suoi insight (con feed e fonti)
         const { data: insights, error } = await db
             .from('market_insights')
-            .select(`
-                *,
-                assets (*),
-                content_feed (*, sources (*))
-            `)
+            .select(`*, assets (*), content_feed (*, sources (*))`)
             .eq('asset_ticker', ticker)
             .order('id', { ascending: false });
 
         if (error) throw error;
+        
         if (!insights || insights.length === 0) {
-            hero.innerHTML = `<div class="state-msg">Asset non trovato o nessun dato disponibile.</div>`;
+            hero.innerHTML = `<div class="state-msg">Nessun dato trovato per ${ticker}.</div>`;
             grid.innerHTML = '';
             return;
         }
 
         const asset = insights[0].assets;
-        const lastInsight = insights[0]; // Il più recente per il sentiment attuale
+        const lastInsight = insights[0]; 
 
-        // 1. Render Hero con Dati Tecnici e Sentiment Matrix
+        // 1. Render Hero (Dati tecnici FP Markets + Sentiment Matrix)
         renderHero(hero, asset, lastInsight);
 
-        // 2. Render Feed Storico
+        // 2. Render Grid Storica
         grid.innerHTML = '';
         document.getElementById('asset-count').textContent = `${insights.length} insight${insights.length !== 1 ? 's' : ''}`;
         
         insights.forEach((insight, i) => {
-            const card = buildCard(insight, i); // Utilizza la funzione centralizzata in ui-utils.js
+            const card = buildCard(insight, i); // Funzione in ui-utils.js
             grid.appendChild(card);
         });
 
     } catch (err) {
-        console.error("Errore:", err);
-        grid.innerHTML = `<div class="state-msg">Si è verificato un errore nel caricamento dei dati.</div>`;
+        console.error("Errore Asset SPA:", err);
+        grid.innerHTML = `<div class="state-msg">Errore nel caricamento dei dati.</div>`;
     }
 }
 
@@ -69,7 +59,6 @@ function renderHero(container, asset, insight) {
                     <span><strong style="color: var(--text-secondary);">Size:</strong> ${asset.contract_size}</span>
                 </div>
             </div>
-            
             <div class="sentiment-matrix" style="border-left: 1.5px solid var(--border); padding-left: 40px; display: flex; flex-direction: column; gap: 20px;">
                 <h4 style="font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px;">Market Sentiment</h4>
                 ${renderSentimentRow('Short Term', insight.sentiment_short)}
@@ -84,10 +73,8 @@ function renderSentimentRow(label, sentiment) {
     const s = (sentiment || 'UNKNOWN').toUpperCase();
     let color = 'var(--text-muted)';
     let bg = 'var(--bg-subtle)';
-
     if (s === 'BULLISH') { color = 'var(--bullish)'; bg = 'var(--bullish-bg)'; }
     if (s === 'BEARISH') { color = 'var(--bearish)'; bg = 'var(--bearish-bg)'; }
-
     return `
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">${label}</span>

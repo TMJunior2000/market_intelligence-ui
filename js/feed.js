@@ -1,10 +1,14 @@
 /**
- * FEED.JS — Orchestratore con gestione temporale UTC
+ * FEED.JS — Caricamento dati Dashboard iniziale
  */
 
 document.addEventListener('componentsReady', async () => {
-    console.log("FEED: Inizializzo il caricamento multi-sezione (UTC sync)...");
     await loadAllFeeds();
+    
+    // Supporto per ricaricamento pagina su un ticker specifico
+    const params = new URLSearchParams(window.location.search);
+    const ticker = params.get('ticker');
+    if (ticker) router.navigateToAsset(ticker);
 });
 
 async function loadAllFeeds() {
@@ -16,78 +20,43 @@ async function loadAllFeeds() {
 
     if (error) return console.error(error);
 
-    // --- NUOVA LOGICA: RAGGRUPPAMENTO PER NOTIZIA ---
+    // Aggregazione Ticker per Notizia
     const aggregatedMap = new Map();
-
     data.forEach(item => {
-        // Usiamo il titolo della notizia come chiave univoca (o item.content_feed.id se preferisci)
         const key = item.title; 
-        
         if (!aggregatedMap.has(key)) {
-            // Se è la prima volta che vediamo questa notizia, creiamo l'oggetto base
-            aggregatedMap.set(key, {
-                ...item,
-                all_groups: [item.assets?.asset_group || ''],
-                all_tickers: [item.asset_ticker] // Iniziamo la lista dei ticker
-            });
+            aggregatedMap.set(key, { ...item, all_groups: [item.assets?.asset_group || ''], all_tickers: [item.asset_ticker] });
         } else {
-            // Se la notizia esiste già, aggiungiamo solo il nuovo ticker alla lista
             const existing = aggregatedMap.get(key);
-            const newGroup  = item.assets?.asset_group || '';
-
-            if (!existing.all_groups.includes(newGroup)) {
-                existing.all_groups.push(newGroup);
-            }
-
-            if (!existing.all_tickers.includes(item.asset_ticker)) {
-                existing.all_tickers.push(item.asset_ticker);
-            }
+            const newGroup = item.assets?.asset_group || '';
+            if (!existing.all_groups.includes(newGroup)) existing.all_groups.push(newGroup);
+            if (!existing.all_tickers.includes(item.asset_ticker)) existing.all_tickers.push(item.asset_ticker);
         }
     });
 
-    // Trasformiamo la mappa di nuovo in un array per i filtri
     const insights = Array.from(aggregatedMap.values());
+    const ora = new Date().getTime();
+    const ventiquattroOre = 24 * 60 * 60 * 1000;
+    const setteGiorni = 7 * ventiquattroOre;
 
-    const ora = new Date();
-    const ventiquattroOreMs = 24 * 60 * 60 * 1000;
-    const setteGiorniMs = 7 * ventiquattroOreMs;
-
-    // 1. Breaking: Se almeno un ticker è ASSET e < 24h
-    const breakingData = insights.filter(i => {
-        const diff = ora.getTime() - new Date(i.content_feed?.published_at).getTime();
-        return i.insight_type === 'ASSET' && diff <= ventiquattroOreMs;
+    const breaking = insights.filter(i => (i.insight_type === 'ASSET' && (ora - new Date(i.content_feed?.published_at).getTime()) <= ventiquattroOre));
+    const weekly = insights.filter(i => {
+        const diff = ora - new Date(i.content_feed?.published_at).getTime();
+        return diff > ventiquattroOre && diff <= setteGiorni;
     });
+    const macro = insights.filter(i => i.insight_type === 'MACRO_EVENT');
 
-    // 2. Weekly: Tra 24h e 7 giorni
-    const weeklyData = insights.filter(i => {
-        const diff = ora.getTime() - new Date(i.content_feed?.published_at).getTime();
-        return diff > ventiquattroOreMs && diff <= setteGiorniMs;
-    });
-
-    // 3. Macro: Tutto ciò che è MACRO_EVENT
-    const macroData = insights.filter(i => i.insight_type === 'MACRO_EVENT');
-
-    renderSection('grid-breaking', 'count-breaking', breakingData);
-    renderSection('grid-weekly', 'count-weekly', weeklyData);
-    renderSection('grid-macro', 'count-macro', macroData);
+    renderSection('grid-breaking', 'count-breaking', breaking);
+    renderSection('grid-weekly', 'count-weekly', weekly);
+    renderSection('grid-macro', 'count-macro', macro);
 }
 
 function renderSection(gridId, countId, insights) {
     const grid = document.getElementById(gridId);
     const countEl = document.getElementById(countId);
-    
     if (!grid) return;
-
     if (countEl) countEl.textContent = `${insights.length} insight${insights.length !== 1 ? 's' : ''}`;
-
-    if (insights.length === 0) {
-        grid.innerHTML = `<div class="state-msg"><p>Nessun dato recente trovato.</p></div>`;
-        return;
-    }
-
-    grid.innerHTML = '';
-    insights.forEach((insight, i) => {
-        const card = buildCard(insight, i);
-        grid.appendChild(card);
-    });
+    
+    grid.innerHTML = insights.length === 0 ? '<div class="state-msg">Nessun dato recente trovato.</div>' : '';
+    insights.forEach((insight, i) => grid.appendChild(buildCard(insight, i)));
 }
