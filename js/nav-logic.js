@@ -146,30 +146,43 @@ function handleLayoutTransition(mode, displayName) {
     }
 }
 
+
 function applyFilter(type, value) {
+    // Selezioniamo tutte le card caricate nelle tre sezioni della dashboard
     const allCards = document.querySelectorAll('#dashboard-view .insight-card');
     const filteredGrid = document.getElementById('filtered-grid');
     const isMainView = (value === 'all');
     
     filteredGrid.innerHTML = '';
     let count = 0;
-    const addedTitles = new Set();
+    const addedTitles = new Set(); // Evita duplicati se la stessa notizia è in più sezioni
 
     allCards.forEach(card => {
         const cardGroups = (card.dataset.assetGroups || '').split(',');
         const insightType = card.dataset.insightType;
+        const confidence = parseInt(card.dataset.confidence) || 0;
         const cardTitle = card.querySelector('.card-title')?.textContent;
+
         let isMatch = false;
         
         if (type === 'main') {
-            if (value === 'all') isMatch = true;
-            else if (value === 'high-conviction') isMatch = parseInt(card.dataset.confidence) >= 9;
-            else if (value === 'macro') isMatch = (insightType === 'MACRO_EVENT');
-            else {
+            if (value === 'all') {
+                isMatch = true;
+            } else if (value === 'high-conviction') {
+                isMatch = confidence >= 9;
+            } else if (value === 'macro') {
+                isMatch = (insightType === 'MACRO_EVENT');
+            } else {
                 const allowed = groupMapping[value] || [];
-                isMatch = cardGroups.some(g => allowed.includes(g));
+                // Confronto flessibile: controlla se qualche gruppo della card contiene una delle parole chiave
+                isMatch = cardGroups.some(cg => 
+                    allowed.some(a => cg.toLowerCase().includes(a.toLowerCase()))
+                );
             }
-        } else if (type === 'sub') isMatch = cardGroups.includes(value);
+        } else if (type === 'sub') {
+            // Per i sottogruppi (es. Metals): controllo se il valore è contenuto nel nome del gruppo
+            isMatch = cardGroups.some(cg => cg.toLowerCase().includes(value.toLowerCase()));
+        }
 
         if (isMatch && !addedTitles.has(cardTitle)) {
             if (!isMainView) {
@@ -178,12 +191,16 @@ function applyFilter(type, value) {
                 filteredGrid.appendChild(cardClone);
                 addedTitles.add(cardTitle);
                 count++;
-            } else card.style.display = 'flex';
+            } else {
+                card.style.display = 'flex'; 
+            }
         }
     });
 
     const countEl = document.getElementById('active-filter-count');
-    if (countEl && !isMainView) countEl.textContent = `${count} insights trovati`;
+    if (countEl && !isMainView) {
+        countEl.textContent = `${count} insight${count !== 1 ? 's' : ''} trovati`;
+    }
 }
 
 function updateActiveUI(element) {

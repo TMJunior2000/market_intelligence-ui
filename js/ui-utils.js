@@ -1,23 +1,25 @@
 /**
- * UI-UTILS.JS - Versione con Sentiment Indicators (incluso NEUTRAL)
+ * UI-UTILS.JS - Versione SPA ottimizzata per filtri
  */
 
 function buildCard(insight, index) {
     const card = document.createElement('article');
     card.className = 'insight-card';
 
+    // --- AGGIUNTA METADATI PER FILTRI SPA ---
     const groupsString = (insight.all_groups || [insight.asset_group || '']).join(',');
     card.dataset.assetGroups = groupsString; 
+    card.dataset.confidence = insight.confidence || 0; 
+    card.dataset.insightType = insight.insight_type || 'ASSET';
     
-    // Funzione interna aggiornata per includere NEUTRAL
+    // Funzione interna per i badge sentiment
     const getMiniSentiment = (val, label) => {
-        // Ora escludiamo solo se il valore è nullo o UNKNOWN
         if (!val || val.toUpperCase() === 'UNKNOWN') return '';
         
         const s = val.toUpperCase();
         let color = 'var(--text-muted)';
         let bg = 'var(--bg-subtle)';
-        let icon = 'fa-minus'; // Icona neutra (trattino)
+        let icon = 'fa-minus'; 
 
         if (s === 'BULLISH') { 
             color = 'var(--bullish)'; 
@@ -28,7 +30,6 @@ function buildCard(insight, index) {
             bg = 'var(--bearish-bg)'; 
             icon = 'fa-arrow-down';
         }
-        // Se è NEUTRAL, mantiene i valori di default (grigio/minus)
 
         return `
             <div title="${label}: ${s}" style="display: flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 800; color: ${color}; background: ${bg}; padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono);">
