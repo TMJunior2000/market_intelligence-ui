@@ -160,6 +160,55 @@ img { display: block; max-width: 100%; }
     overflow-y: auto;
 }
 
+/* Container del dropdown */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* Nascondi il contenuto del menu di base */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: var(--bg-card); /* Colore scuro del tuo tema */
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
+    z-index: 1000;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-top: 5px;
+}
+
+/* Mostra il menu al passaggio del mouse */
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* Pulsanti dentro il menu */
+.sub-filter-btn {
+    color: var(--text-muted);
+    padding: 10px 15px;
+    text-decoration: none;
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.sub-filter-btn:hover {
+    background-color: var(--bg-body);
+    color: var(--accent);
+}
+
+.sub-filter-btn.active {
+    color: var(--accent);
+    font-weight: bold;
+}
+
 /* Singolo elemento del menu */
 .suggestion-item {
     display: flex;
