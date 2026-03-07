@@ -61,8 +61,9 @@ img { display: block; max-width: 100%; }
   border-bottom: 1.5px solid var(--border);
   display: flex;
   align-items: center;
-  padding: 0 24px;
-  gap: 16px;
+  padding: 0 20px;           /* Ridotto da 24px per recuperare spazio */
+  gap: 12px;                 /* Ridotto da 16px per avvicinare gli elementi */
+  justify-content: space-between; /* Distribuisce logo a sinistra e filtri a destra */
 }
 
 .navbar-brand {
@@ -107,9 +108,9 @@ img { display: block; max-width: 100%; }
 
 /* --- SEARCH BAR OPTIMIZATION --- */
 .navbar-search {
-  flex: 3;            /* Aumentato da 1 a 3 per dare priorità alla ricerca */
-  max-width: 600px;    /* Aumentato da 420px a 600px */
-  min-width: 200px;    /* Protezione per schermi piccoli */
+  flex: 3;                   /* Prende 3 parti dello spazio disponibile */
+  max-width: 600px; 
+  min-width: 240px;          /* Assicura che il placeholder si legga sempre */
   position: relative;
 }
 
@@ -210,10 +211,10 @@ img { display: block; max-width: 100%; }
 /* --- FILTERS & DROPDOWNS --- */
 .navbar-filters {
   display: flex;
-  gap: 6px;
+  gap: 4px;                  /* Gap minimo tra i pulsanti */
   align-items: center;
-  flex: 1;  /* Permette ai filtri di occupare lo spazio rimanente */
-  justify-content: flex-end; /* Spinge i filtri verso destra */
+  flex: 1;                   /* Prende lo spazio rimanente a destra */
+  justify-content: flex-end; /* Spinge tutto verso il Live Terminal */
 }
 
 .dropdown {
@@ -268,11 +269,11 @@ img { display: block; max-width: 100%; }
 
 .filter-btn {
   height: 32px;
-  padding: 0 14px;
+  padding: 0 12px;           /* Ridotto leggermente per guadagnare spazio */
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 11px;           /* Ridotto da 12px a 11px per i nomi lunghi */
   font-weight: 600;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;     /* Ridotto per compattare il testo */
   text-transform: uppercase;
   border: 1.5px solid var(--border);
   background: transparent;
@@ -281,6 +282,12 @@ img { display: block; max-width: 100%; }
   display: flex;
   align-items: center;
   gap: 6px;
+  
+  /* --- AGGIUNTE CRUCIALI --- */
+  white-space: nowrap;       /* Impedisce a "High Conviction" di andare a capo */
+  flex-shrink: 0;            /* Impedisce ai pulsanti di rimpicciolirsi */
+  width: auto;               /* Permette l'espansione orizzontale */
+  min-width: fit-content;    /* Forza il bordo a seguire il testo */
 }
 
 .filter-btn i { font-size: 10px; opacity: 0.5; }
@@ -319,7 +326,9 @@ img { display: block; max-width: 100%; }
     background-color: var(--accent-light);
 }
 
-.navbar-spacer { flex: 1; }
+.navbar-spacer { 
+  display: none; 
+}
 
 .live-badge {
   display: flex;
