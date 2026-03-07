@@ -139,21 +139,26 @@ function handleLayoutTransition(mode) {
  * Logica di Filtraggio Card (Client-side)
  */
 function applyFilter(type, value) {
-    const allCards = document.querySelectorAll('.insight-card');
+    const allCards = document.querySelectorAll('#dashboard-view .insight-card'); // Prende solo le card originali
     const filteredGrid = document.getElementById('filtered-grid');
     const isMainView = (value === 'all');
     
+    // 1. Pulisce sempre la griglia dei risultati prima di iniziare
     filteredGrid.innerHTML = '';
     let count = 0;
+
+    // Usiamo un Set per evitare di aggiungere la stessa card fisica più volte
+    const addedTitles = new Set();
 
     allCards.forEach(card => {
         const cardGroup = card.dataset.assetGroup;
         const insightType = card.dataset.insightType;
+        const cardTitle = card.querySelector('.card-title')?.textContent;
 
         let isMatch = false;
         
         if (type === 'main') {
-            if (value === 'high-conviction' || value === 'all') {
+            if (value === 'all') {
                 isMatch = true;
             } else if (value === 'macro') {
                 isMatch = (insightType === 'MACRO_EVENT');
@@ -162,18 +167,21 @@ function applyFilter(type, value) {
                 isMatch = allowed.includes(cardGroup);
             }
         } else if (type === 'sub') {
+            // Filtro per sottogruppo (es. 'Equity CFD US')
             isMatch = cardGroup.includes(value);
         }
 
-        if (!isMainView) {
-            if (isMatch) {
+        // 2. Se c'è un match e non abbiamo già aggiunto questa notizia
+        if (isMatch && !addedTitles.has(cardTitle)) {
+            if (!isMainView) {
                 const cardClone = card.cloneNode(true);
                 cardClone.style.display = 'flex';
                 filteredGrid.appendChild(cardClone);
+                addedTitles.add(cardTitle); // Segna il titolo come "già inserito"
                 count++;
+            } else {
+                card.style.display = 'flex'; 
             }
-        } else {
-            card.style.display = 'flex'; 
         }
     });
 
