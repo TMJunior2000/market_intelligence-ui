@@ -16,7 +16,16 @@
     </div>
 
     <div class="navbar-filters">
-        <button class="filter-btn active" data-group="all">Tutto</button>
+        <div class="dropdown">
+            <button class="filter-btn active" data-group="all">
+                Tutto <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="dropdown-content">
+                <button class="sub-filter-btn" data-subgroup="breaking-news">Breaking News</button>
+                <button class="sub-filter-btn" data-subgroup="weekly-digest">Weekly Digest</button>
+                <button class="sub-filter-btn" data-subgroup="macro-outlook">Macro Outlook</button>
+            </div>
+        </div>
 
         <div class="dropdown">
             <button class="filter-btn" data-group="borsa">Borsa <i class="fas fa-chevron-down"></i></button>

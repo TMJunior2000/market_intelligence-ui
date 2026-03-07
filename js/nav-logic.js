@@ -1,5 +1,5 @@
 /**
- * NAV-LOGIC.JS - Gestisce Ricerca Asset e UI della Navbar con Dropdown e Filtri
+ * NAV-LOGIC.JS - Gestisce Ricerca, Dropdown e Navigazione tra Sezioni/Filtri
  */
 
 // Mappatura dei Macro Gruppi basata sul tuo DB
@@ -12,51 +12,48 @@ const groupMapping = {
 };
 
 document.addEventListener('componentsReady', () => {
-  initAssetSearch();
-  initNavFilters();
+    initAssetSearch();
+    initNavFilters();
 });
 
 function initAssetSearch() {
-  const input = document.getElementById('asset-search');
-  const suggestions = document.getElementById('search-suggestions');
-  if (!input || !suggestions) return;
+    const input = document.getElementById('asset-search');
+    const suggestions = document.getElementById('search-suggestions');
+    if (!input || !suggestions) return;
 
-  let debounceTimer;
+    let debounceTimer;
 
-  input.addEventListener('input', () => {
-    clearTimeout(debounceTimer);
-    const query = input.value.trim().toUpperCase();
+    input.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        const query = input.value.trim().toUpperCase();
 
-    if (query.length < 2) {
-      suggestions.classList.add('hidden');
-      return;
-    }
+        if (query.length < 2) {
+            suggestions.classList.add('hidden');
+            return;
+        }
 
-    debounceTimer = setTimeout(async () => {
-      const { data, error } = await db
-        .from('assets')
-        .select('ticker, name_full, asset_group')
-        .ilike('ticker', `%${query}%`)
-        .limit(8); // Aumentato a 8 visto che il menu ora è più largo
+        debounceTimer = setTimeout(async () => {
+            const { data, error } = await db
+                .from('assets')
+                .select('ticker, name_full, asset_group')
+                .ilike('ticker', `%${query}%`)
+                .limit(8);
 
-      if (data && data.length > 0) {
-        renderSuggestions(data, suggestions);
-      } else {
-        suggestions.classList.add('hidden');
-      }
-    }, 200);
-  });
+            if (data && data.length > 0) {
+                renderSuggestions(data, suggestions);
+            } else {
+                suggestions.classList.add('hidden');
+            }
+        }, 200);
+    });
 
-  document.addEventListener('click', (e) => {
-    if (!input.contains(e.target) && !suggestions.contains(e.target)) {
-      suggestions.classList.add('hidden');
-    }
-  });
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !suggestions.contains(e.target)) {
+            suggestions.classList.add('hidden');
+        }
+    });
 }
 
-/**
- * Rendering Ricerca: Allineato alla Griglia CSS (Ticker - Nome - Gruppo)
- */
 function renderSuggestions(assets, container) {
     container.innerHTML = assets.map(a => `
         <div class="suggestion-item" onclick="window.location.href='asset.html?ticker=${a.ticker}'">
@@ -82,11 +79,35 @@ function initNavFilters() {
             applyFilter('main', group);
         }
 
-        // Caso 2: Click su Sottogruppo nel Dropdown (CFD US, Majors, etc.)
+        // Caso 2: Click su Sottogruppo nel Dropdown
         if (target.classList.contains('sub-filter-btn')) {
             const subValue = target.dataset.subgroup;
-            
-            // Attiva il pulsante "padre" del dropdown per feedback visivo
+
+            // --- NUOVA LOGICA: Gestione Sottosezioni di "TUTTO" (Scroll) ---
+            const temporalSections = ['breaking-news', 'weekly-digest', 'macro-outlook'];
+            if (temporalSections.includes(subValue)) {
+                // Torna alla vista dashboard completa
+                handleLayoutTransition('all');
+                updateActiveUI(document.querySelector('[data-group="all"]'));
+
+                // Scroll fluido alla sezione specifica
+                const section = document.querySelector(`[data-component="${subValue}"]`);
+                if (section) {
+                    const offset = 80; // Spazio per la navbar sticky
+                    const bodyRect = document.body.getBoundingClientRect().top;
+                    const elementRect = section.getBoundingClientRect().top;
+                    const elementPosition = elementRect - bodyRect;
+                    const offsetPosition = elementPosition - offset;
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+                return; // Esce per non applicare filtri sugli asset
+            }
+
+            // --- FILTRO ASSET STANDARD (Borsa, Forex, etc.) ---
             const parentBtn = target.closest('.dropdown').querySelector('.filter-btn');
             updateActiveUI(parentBtn);
             
@@ -96,9 +117,6 @@ function initNavFilters() {
     });
 }
 
-/**
- * Gestione Layout: Nasconde Breaking e Macro se c'è un filtro attivo
- */
 function handleLayoutTransition(mode) {
     const dashboard = document.getElementById('dashboard-view');
     const filteredView = document.getElementById('filtered-view');
@@ -112,37 +130,32 @@ function handleLayoutTransition(mode) {
         dashboard.style.display = 'none';
         filteredView.style.display = 'block';
         
-        // Aggiorna titolo e resetta griglia per i nuovi risultati
         document.getElementById('active-filter-title').textContent = mode.toUpperCase();
         filteredGrid.innerHTML = ''; 
     }
 }
 
-/**
- * Logica di Filtraggio Card
- */
 function applyFilter(type, value) {
-    // 1. Allineamento ID con index.html
     const allCards = document.querySelectorAll('.insight-card');
     const filteredGrid = document.getElementById('filtered-grid');
     const isMainView = (value === 'all');
     
-    // Puliamo la griglia dei filtri prima di ogni nuova ricerca
     filteredGrid.innerHTML = '';
-    
     let count = 0;
 
     allCards.forEach(card => {
         const cardGroup = card.dataset.assetGroup;
-        const confidence = parseInt(card.dataset.confidence);
         const insightType = card.dataset.insightType;
 
         let isMatch = false;
         
         if (type === 'main') {
-            if (value === 'high-conviction') isMatch = confidence >= 8;
-            else if (value === 'macro') isMatch = (insightType === 'MACRO_EVENT');
-            else {
+            // Rimosso filtro confidence >= 8. Ora mostra tutto.
+            if (value === 'high-conviction' || value === 'all') {
+                isMatch = true;
+            } else if (value === 'macro') {
+                isMatch = (insightType === 'MACRO_EVENT');
+            } else {
                 const allowed = groupMapping[value] || [];
                 isMatch = allowed.includes(cardGroup);
             }
@@ -152,19 +165,16 @@ function applyFilter(type, value) {
 
         if (!isMainView) {
             if (isMatch) {
-                // Cloniamo la card per spostarla nella vista dedicata
                 const cardClone = card.cloneNode(true);
                 cardClone.style.display = 'flex';
                 filteredGrid.appendChild(cardClone);
                 count++;
             }
         } else {
-            // Vista "Tutto": le card originali tornano visibili nei loro componenti
             card.style.display = 'flex'; 
         }
     });
 
-    // 2. Aggiorna il contatore usando l'ID corretto dell'index.html
     if (!isMainView) {
         const countEl = document.getElementById('active-filter-count');
         if (countEl) countEl.textContent = `${count} insight${count !== 1 ? 's' : ''} trovati`;
