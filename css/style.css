@@ -105,10 +105,10 @@ img { display: block; max-width: 100%; }
   flex-shrink: 0;
 }
 
-/* Search bar */
+/* --- SEARCH BAR OPTIMIZATION --- */
 .navbar-search {
   flex: 1;
-  max-width: 360px;
+  max-width: 420px; /* Aumentato per bilanciare la navbar */
   position: relative;
 }
 
@@ -128,8 +128,6 @@ img { display: block; max-width: 100%; }
   letter-spacing: 0.5px;
 }
 
-.navbar-search input::placeholder { color: var(--text-muted); font-weight: 400; }
-
 .navbar-search input:focus {
   background: #fff;
   border-color: var(--accent);
@@ -144,125 +142,98 @@ img { display: block; max-width: 100%; }
   pointer-events: none;
 }
 
-/* Contenitore Dropdown Ricerca */
+/* --- SEARCH SUGGESTIONS DROPDOWN --- */
 #search-suggestions {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 8px);
     left: 0;
-    width: 100%;
+    min-width: 480px; /* Più largo dell'input per mostrare i dettagli */
     background: var(--bg-card);
     border: 1.5px solid var(--border);
-    border-top: none;
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-hover);
     z-index: 1000;
-    max-height: 300px;
+    max-height: 400px;
     overflow-y: auto;
+    overflow-x: hidden; /* Blocca scroll orizzontale */
 }
 
-/* Container del dropdown */
-.dropdown {
-    position: relative;
-    display: inline-block;
-}
-
-/* Nascondi il contenuto del menu di base */
-.dropdown-content {
-    display: none;
-    position: absolute;
-    background-color: var(--bg-card); /* Colore scuro del tuo tema */
-    min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
-    z-index: 1000;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    margin-top: 5px;
-}
-
-/* Mostra il menu al passaggio del mouse */
-.dropdown:hover .dropdown-content {
-    display: block;
-}
-
-/* Pulsanti dentro il menu */
-.sub-filter-btn {
-    color: var(--text-muted);
-    padding: 10px 15px;
-    text-decoration: none;
-    display: block;
-    width: 100%;
-    text-align: left;
-    background: none;
-    border: none;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.sub-filter-btn:hover {
-    background-color: var(--bg-body);
-    color: var(--accent);
-}
-
-.sub-filter-btn.active {
-    color: var(--accent);
-    font-weight: bold;
-}
-
-/* Singolo elemento del menu */
 .suggestion-item {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    /* Struttura: Ticker (80px) | Nome (Flessibile) | Gruppo (Auto) */
+    grid-template-columns: 85px 1fr auto;
     align-items: center;
     padding: 12px 16px;
+    gap: 12px;
     cursor: pointer;
     transition: background 0.2s;
     border-bottom: 1px solid var(--bg-subtle);
 }
 
-.suggestion-item:last-child {
-    border-bottom: none;
-}
+.suggestion-item:last-child { border-bottom: none; }
+.suggestion-item:hover { background: var(--bg-subtle); }
 
-.suggestion-item:hover {
-    background: var(--bg-subtle);
-}
-
-/* Ticker in evidenza */
 .suggestion-ticker {
     font-family: var(--font-mono);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-primary);
-    background: var(--bg-subtle);
-    padding: 2px 6px;
-    border-radius: var(--radius);
-}
-
-/* Nome esteso dell'asset */
-.suggestion-name {
     font-size: 12px;
-    color: var(--text-secondary);
-    margin-left: 10px;
-    flex-grow: 1;
+    font-weight: 600;
+    color: #fff;
+    background: var(--text-primary);
+    padding: 3px 8px;
+    border-radius: var(--radius);
+    text-align: center;
 }
 
-/* Etichetta del gruppo (Forex, Crypto...) */
+.suggestion-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Puntini se il nome è troppo lungo */
+}
+
 .suggestion-group {
     font-family: var(--font-mono);
     font-size: 9px;
     font-weight: 700;
     text-transform: uppercase;
     color: var(--text-muted);
-    letter-spacing: 1px;
+    background: var(--bg-subtle);
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
 }
 
-/* Filtri rapidi */
+/* --- FILTERS & DROPDOWNS --- */
 .navbar-filters {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
-  flex-wrap: wrap;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: var(--bg-card);
+    min-width: 180px;
+    box-shadow: var(--shadow-hover);
+    z-index: 1000;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-top: 6px;
+    overflow: hidden;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
 }
 
 .filter-btn {
@@ -277,7 +248,12 @@ img { display: block; max-width: 100%; }
   background: transparent;
   color: var(--text-secondary);
   transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+
+.filter-btn i { font-size: 10px; opacity: 0.5; }
 
 .filter-btn:hover {
   border-color: var(--accent);
@@ -290,13 +266,31 @@ img { display: block; max-width: 100%; }
   color: #fff;
 }
 
-.filter-btn.bullish-filter.active  { background: var(--bullish);  border-color: var(--bullish);  color: #fff; }
-.filter-btn.bearish-filter.active  { background: var(--bearish);  border-color: var(--bearish);  color: #fff; }
-.filter-btn.macro-filter.active    { background: var(--accent);   border-color: var(--accent);   color: #fff; }
+.sub-filter-btn {
+    color: var(--text-secondary);
+    padding: 10px 16px;
+    width: 100%;
+    text-align: left;
+    font-size: 12.5px;
+    font-weight: 500;
+    border-bottom: 1px solid var(--bg-subtle);
+    transition: all 0.2s;
+}
+
+.sub-filter-btn:last-child { border-bottom: none; }
+
+.sub-filter-btn:hover {
+    background-color: var(--bg-subtle);
+    color: var(--accent);
+}
+
+.sub-filter-btn.active {
+    color: var(--accent);
+    background-color: var(--accent-light);
+}
 
 .navbar-spacer { flex: 1; }
 
-/* Live badge */
 .live-badge {
   display: flex;
   align-items: center;
@@ -396,7 +390,6 @@ img { display: block; max-width: 100%; }
   gap: 8px;
 }
 
-/* Ticker badge — cliccabile */
 .ticker-badge {
   display: inline-flex;
   align-items: center;
@@ -415,9 +408,6 @@ img { display: block; max-width: 100%; }
 
 .ticker-badge:hover { background: var(--accent); }
 
-.ticker-badge svg { opacity: 0.6; }
-
-/* Macro badge */
 .macro-badge {
   display: inline-flex;
   align-items: center;
@@ -433,7 +423,6 @@ img { display: block; max-width: 100%; }
   text-transform: uppercase;
 }
 
-/* Confidence */
 .confidence-badge {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -442,7 +431,6 @@ img { display: block; max-width: 100%; }
   margin-left: auto;
 }
 
-/* Card title */
 .card-title {
   font-family: var(--font-display);
   font-size: 17px;
@@ -457,17 +445,12 @@ img { display: block; max-width: 100%; }
   font-size: 13.5px;
   color: var(--text-secondary);
   line-height: 1.65;
-  
-  /* Altezza fissa calcolata su 3 righe per non alterare la card */
   height: 67px; 
   overflow-y: auto;
-  padding-right: 4px; /* Spazio per la scrollbar */
-  
-  /* Rimosso webkit-box per abilitare lo scroll */
+  padding-right: 4px;
   display: block; 
 }
 
-/* Scrollbar sottile in stile Terminale/Worldy */
 .card-summary::-webkit-scrollbar {
   width: 3px;
 }
@@ -477,38 +460,6 @@ img { display: block; max-width: 100%; }
 }
 .card-summary::-webkit-scrollbar-thumb:hover {
   background: var(--accent);
-}
-
-/* Sentiment row */
-.sentiment-row {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-top: 2px;
-}
-
-.sentiment-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  padding: 3px 9px;
-  border-radius: 20px;
-  font-family: var(--font-mono);
-}
-
-.sentiment-pill.BULLISH  { background: var(--bullish-bg);  color: var(--bullish); }
-.sentiment-pill.BEARISH  { background: var(--bearish-bg);  color: var(--bearish); }
-.sentiment-pill.NEUTRAL  { background: var(--neutral-bg);  color: var(--neutral); }
-.sentiment-pill.UNKNOWN  { background: var(--neutral-bg);  color: var(--text-muted); }
-
-.sentiment-label {
-  font-size: 9px;
-  opacity: 0.7;
-  font-weight: 500;
 }
 
 /* Card footer */
@@ -549,23 +500,13 @@ img { display: block; max-width: 100%; }
   color: var(--text-muted);
 }
 
-/* ---- EMPTY / LOADING / ERROR STATES ---- */
+/* ---- STATES ---- */
 .state-msg {
   grid-column: 1 / -1;
   text-align: center;
   padding: 64px 24px;
   color: var(--text-muted);
 }
-
-.state-msg h3 {
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  margin-bottom: 8px;
-}
-
-.state-msg p { font-size: 14px; }
 
 .spinner {
   width: 36px;
@@ -579,155 +520,16 @@ img { display: block; max-width: 100%; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ---- ASSET PAGE ---- */
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-muted);
-  margin-bottom: 28px;
-  transition: color .15s;
-}
-.back-link:hover { color: var(--accent); }
-
-.asset-hero {
-  background: var(--bg-card);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 28px 32px;
-  margin-bottom: 32px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  box-shadow: var(--shadow-card);
-}
-
-.asset-ticker-large {
-  font-family: var(--font-mono);
-  font-size: 36px;
-  font-weight: 500;
-  color: var(--text-primary);
-  letter-spacing: 2px;
-  line-height: 1;
-}
-
-.asset-name-full {
-  font-size: 14px;
-  color: var(--text-muted);
-  margin-top: 6px;
-}
-
-.asset-group-badge {
-  display: inline-block;
-  margin-top: 12px;
-  background: var(--bg-subtle);
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: var(--radius);
-}
-
-/* Sentiment gauges nel hero */
-.asset-hero-right {
-  display: flex;
-  gap: 20px;
-  flex-shrink: 0;
-}
-
-.gauge-block {
-  text-align: center;
-  min-width: 72px;
-}
-
-.gauge-label {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-  font-family: var(--font-mono);
-}
-
-.gauge-ring {
-  position: relative;
-  width: 64px;
-  height: 64px;
-  margin: 0 auto;
-}
-
-.gauge-ring svg { transform: rotate(-90deg); }
-
-.gauge-ring-track { fill: none; stroke: var(--border); stroke-width: 5; }
-.gauge-ring-fill  { fill: none; stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset .8s ease; }
-.gauge-ring-fill.BULLISH { stroke: var(--bullish); }
-.gauge-ring-fill.BEARISH { stroke: var(--bearish); }
-.gauge-ring-fill.NEUTRAL { stroke: var(--neutral); }
-.gauge-ring-fill.UNKNOWN { stroke: var(--border); }
-
-.gauge-value {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.gauge-value.BULLISH { color: var(--bullish); }
-.gauge-value.BEARISH { color: var(--bearish); }
-.gauge-value.NEUTRAL { color: var(--neutral); }
-.gauge-value.UNKNOWN { color: var(--text-muted); }
-
-/* Asset info table */
-.asset-meta {
-  display: flex;
-  gap: 24px;
-  margin-top: 20px;
-  flex-wrap: wrap;
-}
-
-.meta-item dt {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  margin-bottom: 2px;
-}
-.meta-item dd {
-  font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
 /* ---- RESPONSIVE ---- */
+@media (max-width: 1024px) {
+    #search-suggestions { min-width: 100%; }
+}
+
 @media (max-width: 768px) {
   .navbar { padding: 0 16px; gap: 12px; }
-  .navbar-brand .logo-sub { display: none; }
-  .navbar-search { max-width: 200px; }
+  .navbar-search { max-width: 180px; }
   .navbar-filters { display: none; }
-  .page-container { padding: 20px 16px 60px; }
   .feed-grid { grid-template-columns: 1fr; }
-  .asset-hero { flex-direction: column; }
-  .asset-hero-right { justify-content: flex-start; }
-  .live-badge { display: none; }
-}
-
-@media (max-width: 480px) {
-  .navbar-search { display: none; }
 }
 
 /* ---- UTILS ---- */
