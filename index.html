@@ -3,24 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Market Intelligence — Feed</title>
+  <title>Pragmatic Finance — Market Intelligence</title>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
   <link rel="stylesheet" href="css/style.css" />
+  
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 
-  <!-- Componente: Navbar con ricerca e filtri -->
   <div data-component="navbar"></div>
 
-  <!-- Componente: Sezione feed principale -->
-    <div data-component="breaking-news"></div>
-    <div data-component="weekly-digest"></div>
-    <div data-component="macro-outlook"></div>
+  <main class="page-container">
+    
+    <div id="dashboard-view">
+      <div data-component="breaking-news"></div>
+      <div data-component="weekly-digest"></div>
+      <div data-component="macro-outlook"></div>
+    </div>
 
-  <!-- Scripts -->
+    <div id="filtered-view" style="display: none;">
+      <div class="section-header">
+        <h2 class="section-title" id="active-filter-title">Risultati</h2>
+        <span class="section-count" id="active-filter-count">0 insights</span>
+      </div>
+      
+      <div class="feed-grid" id="filtered-grid"></div>
+    </div>
+
+  </main>
+
   <script src="js/config.js"></script>
-  <script src="js/nav-logic.js"></script>
-  <script src="js/feed.js"></script>
+  <script src="js/nav-logic.js"></script> 
+  <script src="js/feed.js"></script>      
   <script src="js/components.js"></script>
 
 </body>

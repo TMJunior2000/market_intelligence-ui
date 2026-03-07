@@ -100,44 +100,75 @@ function initNavFilters() {
  * Gestione Layout: Nasconde Breaking e Macro se c'è un filtro attivo
  */
 function handleLayoutTransition(mode) {
-    const breaking = document.querySelector('[data-component="breaking-news"]');
-    const macro = document.querySelector('[data-component="macro-outlook"]');
-    
-    // Se clicco "all", mostro tutto. Altrimenti nascondo Breaking e Macro
-    const displayStyle = (mode === 'all') ? 'block' : 'none';
-    
-    if (breaking) breaking.style.display = displayStyle;
-    if (macro) macro.style.display = displayStyle;
+    const dashboard = document.getElementById('dashboard-view');
+    const filteredView = document.getElementById('filtered-view');
+    const filteredGrid = document.getElementById('filtered-grid');
+
+    if (mode === 'all') {
+        dashboard.style.display = 'block';
+        filteredView.style.display = 'none';
+        filteredGrid.innerHTML = ''; 
+    } else {
+        dashboard.style.display = 'none';
+        filteredView.style.display = 'block';
+        
+        // Aggiorna titolo e resetta griglia per i nuovi risultati
+        document.getElementById('active-filter-title').textContent = mode.toUpperCase();
+        filteredGrid.innerHTML = ''; 
+    }
 }
 
 /**
  * Logica di Filtraggio Card
  */
 function applyFilter(type, value) {
-    const cards = document.querySelectorAll('.insight-card');
+    // 1. Allineamento ID con index.html
+    const allCards = document.querySelectorAll('.insight-card');
+    const filteredGrid = document.getElementById('filtered-grid');
+    const isMainView = (value === 'all');
     
-    cards.forEach(card => {
-        const cardGroup = card.dataset.assetGroup; // Assicurati sia presente nel buildCard di feed.js
+    // Puliamo la griglia dei filtri prima di ogni nuova ricerca
+    filteredGrid.innerHTML = '';
+    
+    let count = 0;
+
+    allCards.forEach(card => {
+        const cardGroup = card.dataset.assetGroup;
         const confidence = parseInt(card.dataset.confidence);
         const insightType = card.dataset.insightType;
 
-        let isVisible = false;
-
+        let isMatch = false;
+        
         if (type === 'main') {
-            if (value === 'all') isVisible = true;
-            else if (value === 'high-conviction') isVisible = confidence >= 8;
-            else if (value === 'macro') isVisible = (insightType === 'MACRO_EVENT');
+            if (value === 'high-conviction') isMatch = confidence >= 8;
+            else if (value === 'macro') isMatch = (insightType === 'MACRO_EVENT');
             else {
                 const allowed = groupMapping[value] || [];
-                isVisible = allowed.includes(cardGroup);
+                isMatch = allowed.includes(cardGroup);
             }
         } else if (type === 'sub') {
-            // Filtro preciso per sottogruppo o inclusione (per Metalli/Commodities)
-            isVisible = cardGroup.includes(value);
+            isMatch = cardGroup.includes(value);
         }
 
-        card.style.display = isVisible ? 'block' : 'none';
+        if (!isMainView) {
+            if (isMatch) {
+                // Cloniamo la card per spostarla nella vista dedicata
+                const cardClone = card.cloneNode(true);
+                cardClone.style.display = 'flex';
+                filteredGrid.appendChild(cardClone);
+                count++;
+            }
+        } else {
+            // Vista "Tutto": le card originali tornano visibili nei loro componenti
+            card.style.display = 'flex'; 
+        }
     });
+
+    // 2. Aggiorna il contatore usando l'ID corretto dell'index.html
+    if (!isMainView) {
+        const countEl = document.getElementById('active-filter-count');
+        if (countEl) countEl.textContent = `${count} insight${count !== 1 ? 's' : ''} trovati`;
+    }
 }
 
 function updateActiveUI(element) {
