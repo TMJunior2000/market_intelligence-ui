@@ -69,20 +69,26 @@ function initNavFilters() {
     document.addEventListener('click', (e) => {
         const target = e.target;
 
-        // Caso 1: Click su Macro Gruppo (Borsa, Forex, etc.)
+        // Caso 1: Click su Macro Gruppo (Borsa, Forex, High Conviction, etc.)
         if (target.classList.contains('filter-btn')) {
             const group = target.dataset.group;
             if (!group) return;
+
+            // Passiamo il testo del pulsante (es: "BORSA") come titolo
+            const displayName = target.textContent.trim();
+            
             updateActiveUI(target);
-            handleLayoutTransition(group);
+            handleLayoutTransition(group, displayName);
             applyFilter('main', group);
         }
 
-        // Caso 2: Click su Sottogruppo nel Dropdown
+        // Caso 2: Click su Sottogruppo nel Dropdown (es: CFD US, Gold, etc.)
         if (target.classList.contains('sub-filter-btn')) {
             const subValue = target.dataset.subgroup;
+            // Catturiamo il nome specifico del sottogruppo
+            const subDisplayName = target.textContent.trim();
 
-            // --- LOGICA ESCLUSIVA SEZIONI TEMPORALI ---
+            // --- LOGICA ESCLUSIVA SEZIONI TEMPORALI (Breaking, Weekly, Macro) ---
             const temporalSections = ['breaking-news', 'weekly-digest', 'macro-outlook'];
             
             if (temporalSections.includes(subValue)) {
@@ -98,15 +104,21 @@ function initNavFilters() {
                     }
                 });
 
+                // Reset UI sul tasto "TUTTO"
                 updateActiveUI(document.querySelector('[data-group="all"]'));
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 return; 
             }
 
-            // --- FILTRO ASSET STANDARD ---
+            // --- FILTRO ASSET STANDARD (Sottogruppi come 'Metals Gold Raw') ---
             const dropdown = target.closest('.dropdown');
-            if (dropdown) updateActiveUI(dropdown.querySelector('.filter-btn'));
-            handleLayoutTransition('sub');
+            if (dropdown) {
+                const parentBtn = dropdown.querySelector('.filter-btn');
+                updateActiveUI(parentBtn);
+            }
+            
+            // Passiamo 'sub' come modalità e il nome specifico come titolo visibile
+            handleLayoutTransition('sub', subDisplayName);
             applyFilter('sub', subValue);
         }
     });
@@ -115,15 +127,17 @@ function initNavFilters() {
 /**
  * Gestione Layout: Passaggio tra Dashboard e Vista Risultati
  */
-function handleLayoutTransition(mode) {
+function handleLayoutTransition(mode, displayName) {
     const dashboard = document.getElementById('dashboard-view');
     const filteredView = document.getElementById('filtered-view');
+    const filteredGrid = document.getElementById('filtered-grid');
     const temporalSections = ['breaking-news', 'weekly-digest', 'macro-outlook'];
 
     if (mode === 'all') {
         dashboard.style.display = 'block';
         filteredView.style.display = 'none';
-        // Ripristina tutte le sezioni
+        filteredGrid.innerHTML = ''; 
+
         temporalSections.forEach(id => {
             const el = document.querySelector(`[data-component="${id}"]`);
             if (el) el.style.display = 'block';
@@ -131,7 +145,10 @@ function handleLayoutTransition(mode) {
     } else {
         dashboard.style.display = 'none';
         filteredView.style.display = 'block';
-        document.getElementById('active-filter-title').textContent = mode.toUpperCase();
+        
+        // Se displayName è presente usa quello, altrimenti usa mode in maiuscolo
+        document.getElementById('active-filter-title').textContent = displayName || mode.toUpperCase();
+        filteredGrid.innerHTML = ''; 
     }
 }
 
