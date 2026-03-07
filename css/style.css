@@ -132,6 +132,7 @@ img { display: block; max-width: 100%; }
 .navbar-search input:focus {
   background: #fff;
   border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-light);
 }
 
 .navbar-search svg {
