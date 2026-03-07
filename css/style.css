@@ -99,6 +99,21 @@ img { display: block; max-width: 100%; }
   color: var(--text-muted);
 }
 
+/* Impedisce al logo di comportarsi graficamente come un pulsante grigio */
+.navbar-brand.filter-btn {
+    border: none !important;
+    background: transparent !important;
+    color: inherit !important;
+}
+
+.navbar-brand.filter-btn:hover {
+    opacity: 0.8; /* Un leggero feedback visivo al passaggio del mouse */
+}
+
+.navbar-brand.filter-btn.active {
+    box-shadow: none !important; /* Rimuove l'effetto active dei filtri standard */
+}
+
 .navbar-divider {
   width: 1px;
   height: 28px;

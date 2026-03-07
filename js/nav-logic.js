@@ -86,14 +86,28 @@ function renderSuggestions(assets, container) {
 
 function initNavFilters() {
     document.addEventListener('click', (e) => {
-        const target = e.target;
+        // Usa closest per catturare il click anche se avviene sugli elementi interni (span, i, badge)
+        const target = e.target.closest('.filter-btn, .sub-filter-btn');
+        if (!target) return;
 
-        // Caso 1: Click su Macro Gruppo (Borsa, Forex, High Conviction, etc.)
+        // --- CASO 1: CLICK SU MACRO GRUPPO (TUTTO/LOGO, BORSA, FOREX, HIGH CONVICTION) ---
         if (target.classList.contains('filter-btn')) {
             const group = target.dataset.group;
             if (!group) return;
 
-            // Passiamo il testo del pulsante (es: "BORSA") come titolo
+            // Se clicchiamo su "TUTTO" o sul LOGO (data-group="all")
+            if (group === 'all') {
+                // 1. Svuota la barra di ricerca e nascondi i suggerimenti
+                const searchInput = document.getElementById('asset-search');
+                const suggestions = document.getElementById('search-suggestions');
+                if (searchInput) searchInput.value = '';
+                if (suggestions) {
+                    suggestions.classList.add('hidden');
+                    suggestions.style.display = 'none';
+                }
+            }
+
+            // Recuperiamo il nome da mostrare nel titolo (es: "BORSA")
             const displayName = target.textContent.trim();
             
             updateActiveUI(target);
@@ -101,21 +115,17 @@ function initNavFilters() {
             applyFilter('main', group);
         }
 
-        // Caso 2: Click su Sottogruppo nel Dropdown (es: CFD US, Gold, etc.)
+        // --- CASO 2: CLICK SU SOTTOGRUPPO NEL DROPDOWN ---
         if (target.classList.contains('sub-filter-btn')) {
             const subValue = target.dataset.subgroup;
-            // Catturiamo il nome specifico del sottogruppo
             const subDisplayName = target.textContent.trim();
 
-            // --- LOGICA ESCLUSIVA SEZIONI TEMPORALI (Breaking, Weekly, Macro) ---
             const temporalSections = ['breaking-news', 'weekly-digest', 'macro-outlook'];
             
             if (temporalSections.includes(subValue)) {
-                // Mostra la dashboard, nasconde la vista filtrata
                 document.getElementById('dashboard-view').style.display = 'block';
                 document.getElementById('filtered-view').style.display = 'none';
 
-                // CICLO ESCLUSIVO: Mostra solo quella scelta
                 temporalSections.forEach(sectionId => {
                     const sectionEl = document.querySelector(`[data-component="${sectionId}"]`);
                     if (sectionEl) {
@@ -123,20 +133,17 @@ function initNavFilters() {
                     }
                 });
 
-                // Reset UI sul tasto "TUTTO"
                 updateActiveUI(document.querySelector('[data-group="all"]'));
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 return; 
             }
 
-            // --- FILTRO ASSET STANDARD (Sottogruppi come 'Metals Gold Raw') ---
             const dropdown = target.closest('.dropdown');
             if (dropdown) {
                 const parentBtn = dropdown.querySelector('.filter-btn');
                 updateActiveUI(parentBtn);
             }
             
-            // Passiamo 'sub' come modalità e il nome specifico come titolo visibile
             handleLayoutTransition('sub', subDisplayName);
             applyFilter('sub', subValue);
         }
