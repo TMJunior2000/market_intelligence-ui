@@ -16,6 +16,37 @@ document.addEventListener('componentsReady', () => {
     initNavFilters();
 });
 
+const router = {
+    // Naviga verso un Asset specifico
+    navigateToAsset: async (ticker) => {
+        // Nascondi tutto
+        document.getElementById('dashboard-view').style.display = 'none';
+        document.getElementById('filtered-view').style.display = 'none';
+        
+        // Mostra Asset View
+        const assetView = document.getElementById('asset-view');
+        assetView.style.display = 'block';
+        
+        // Aggiorna URL senza ricaricare la pagina (opzionale ma consigliato)
+        history.pushState({ticker}, '', `?ticker=${ticker}`);
+        
+        // Carica i dati (la funzione che avevi in asset.js)
+        if (typeof loadAssetData === 'function') {
+            await loadAssetData(ticker);
+        }
+    },
+
+    backToHome: () => {
+        document.getElementById('asset-view').style.display = 'none';
+        document.getElementById('dashboard-view').style.display = 'block';
+        history.pushState({}, '', 'index.html');
+        
+        // Reset dei filtri
+        const allBtn = document.querySelector('[data-group="all"]');
+        if (allBtn) allBtn.click();
+    }
+};
+
 function initAssetSearch() {
     const input = document.getElementById('asset-search');
     const suggestions = document.getElementById('search-suggestions');
@@ -73,7 +104,7 @@ function initAssetSearch() {
 
 function renderSuggestions(assets, container) {
     container.innerHTML = assets.map(a => `
-        <div class="suggestion-item" onclick="window.location.href='asset.html?ticker=${a.ticker}'">
+        <div class="suggestion-item" onclick="router.navigateToAsset('${a.ticker}')">
             <span class="suggestion-ticker">${a.ticker}</span>
             <span class="suggestion-name">${a.name_full || ''}</span>
             <span class="suggestion-group">${a.asset_group || 'ASSET'}</span>

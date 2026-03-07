@@ -53,7 +53,7 @@ function buildCard(insight, index) {
     const tickerButtons = (insight.all_tickers || [insight.asset_ticker || 'MACRO'])
         .map(t => {
             const badgeClass = isMacro ? 'macro-badge' : 'ticker-badge';
-            const url = isMacro ? '#' : `asset.html?ticker=${t}`;
+            const url = isMacro ? '#' : `javascript:router.navigateToAsset('${t}')`;
             return `<a class="${badgeClass}" href="${url}">${t}</a>`;
         }).join('');
 
