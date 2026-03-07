@@ -62,7 +62,7 @@ img { display: block; max-width: 100%; }
   display: flex;
   align-items: center;
   padding: 0 24px;
-  gap: 24px;
+  gap: 16px;
 }
 
 .navbar-brand {
@@ -107,8 +107,9 @@ img { display: block; max-width: 100%; }
 
 /* --- SEARCH BAR OPTIMIZATION --- */
 .navbar-search {
-  flex: 1;
-  max-width: 420px; /* Aumentato per bilanciare la navbar */
+  flex: 3;            /* Aumentato da 1 a 3 per dare priorità alla ricerca */
+  max-width: 600px;    /* Aumentato da 420px a 600px */
+  min-width: 200px;    /* Protezione per schermi piccoli */
   position: relative;
 }
 
@@ -120,10 +121,10 @@ img { display: block; max-width: 100%; }
   border-radius: 20px;
   padding: 0 16px 0 40px;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 14px;      /* Aumentato leggermente per chiarezza */
   font-weight: 500;
   color: var(--text-primary);
-  transition: border-color .2s, background .2s;
+  transition: all .2s;
   outline: none;
   letter-spacing: 0.5px;
 }
@@ -208,8 +209,10 @@ img { display: block; max-width: 100%; }
 /* --- FILTERS & DROPDOWNS --- */
 .navbar-filters {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
+  flex: 1;  /* Permette ai filtri di occupare lo spazio rimanente */
+  justify-content: flex-end; /* Spinge i filtri verso destra */
 }
 
 .dropdown {
