@@ -1,30 +1,36 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Asset — Market Intelligence</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Asset Analysis — Pragmatic Finance</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
+    <div data-component="navbar"></div>
 
-  <!-- Componente: Navbar variante asset (con breadcrumb ticker) -->
-  <div data-component="navbar-asset"></div>
+    <main class="page-container">
+        <a href="index.html" class="back-link" style="display: flex; align-items: center; gap: 8px; margin-bottom: 24px; font-weight: 600; color: var(--text-secondary);">
+            <i class="fas fa-arrow-left"></i> Torna al Feed
+        </a>
 
-  <!-- Componente: Sezione hero + storico analisi asset -->
-  <div data-component="asset-section"></div>
+        <section id="asset-hero" class="asset-hero-container">
+            <div class="state-msg"><div class="spinner"></div></div>
+        </section>
 
-  <!-- Scripts: ordine fisso — config → components → asset -->
-  <script src="js/config.js"></script>
-  <script src="js/components.js"></script>
-  <script src="js/asset.js"></script>
+        <div class="section-header" style="margin-top: 48px;">
+            <h2 class="section-title">Storico Analisi</h2>
+            <span class="section-count" id="asset-count">0 insights</span>
+        </div>
 
-  <script>
-    // Imposta ticker nel <title> subito, prima ancora che i componenti si carichino
-    const ticker = new URLSearchParams(window.location.search).get('ticker');
-    if (ticker) document.title = `${ticker} — Market Intelligence`;
-  </script>
+        <div class="feed-grid" id="asset-feed-grid">
+            </div>
+    </main>
 
+    <script src="js/config.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/asset.js"></script>
 </body>
 </html>
