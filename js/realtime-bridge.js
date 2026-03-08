@@ -5,21 +5,53 @@ const realtimeBridge = {
     channel: null,
 
     init: () => {
-        realtimeBridge.channel = supabase.channel('live_trading', {
-            config: { broadcast: { self: false } }
-        });
+            // Verifica che supabase sia inizializzato dal config.js
+            if (!window.supabase || typeof window.supabase.channel !== 'function') {
+                console.error("❌ Errore: Il client Supabase non è pronto per il Realtime.");
+                return;
+            }
 
-        realtimeBridge.channel
-            .on('broadcast', { event: 'ping' }, () => {
-                realtimeBridge.channel.send({
-                    type: 'broadcast', event: 'pong', payload: { status: 'online' }
+            // Creazione del canale broadcast
+            realtimeBridge.channel = window.supabase.channel('live_trading', {
+                config: { 
+                    broadcast: { 
+                        self: false, // Non ascoltiamo i nostri stessi messaggi
+                        ack: false   // Disabilitiamo gli ack per massimizzare la velocità
+                    } 
+                }
+            });
+
+            realtimeBridge.channel
+                // 1. ASCOLTO PING DA PYTHON
+                .on('broadcast', { event: 'ping' }, () => {
+                    console.log("📡 [Realtime] PING ricevuto da Python. Rispondo PONG...");
+                    
+                    realtimeBridge.channel.send({
+                        type: 'broadcast',
+                        event: 'pong',
+                        payload: { status: 'online', timestamp: new Date().toISOString() }
+                    });
+                })
+
+                // 2. ASCOLTO DATI ACCOUNT E TRADES
+                .on('broadcast', { event: 'account_update' }, (envelope) => {
+                    console.log("📈 [Realtime] Ricevuto aggiornamento MT5");
+                    
+                    // La libreria a volte impacchetta i dati in 'payload', a volte sono diretti
+                    // Questa riga gestisce entrambi i casi per sicurezza
+                    const data = envelope.payload || envelope;
+                    realtimeBridge.renderTerminal(data);
+                })
+
+                // 3. SOTTOSCRIZIONE
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log("🌐 [Realtime] Canale 'live_trading' connesso con successo!");
+                    } else {
+                        console.warn(`⚠️ [Realtime] Stato connessione: ${status}`);
+                    }
                 });
-            })
-            .on('broadcast', { event: 'account_update' }, (payload) => {
-                realtimeBridge.renderTerminal(payload.payload);
-            })
-            .subscribe();
-    },
+        },
 
     renderTerminal: (data) => {
         const { account, trades } = data;
