@@ -1,0 +1,38 @@
+<div class="live-terminal-wrapper">
+    <div class="card" style="padding: 24px; margin-bottom: 16px; border-top: 4px solid var(--accent);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h4 style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: var(--text-muted); text-transform: uppercase; margin: 0;">Account Status</h4>
+            <span class="live-badge"><span class="live-dot"></span> LIVE</span>
+        </div>
+        
+        <div class="account-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="acc-item">
+                <label style="display: block; font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Equity</label>
+                <span id="equity-val" class="mono bold-finance" style="font-size: 18px;">$0.00</span>
+            </div>
+            <div class="acc-item">
+                <label style="display: block; font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Profit/Loss</label>
+                <span id="profit-val" class="mono bold-finance" style="font-size: 18px;">$0.00</span>
+            </div>
+            <div class="acc-item">
+                <label style="display: block; font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Margin %</label>
+                <span id="margin-level-val" class="mono" style="font-size: 14px; font-weight: 600;">0%</span>
+            </div>
+            <div class="acc-item">
+                <label style="display: block; font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Balance</label>
+                <span id="balance-val" class="mono" style="font-size: 14px; color: var(--text-secondary);">$0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h4 style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: var(--text-muted); text-transform: uppercase; margin: 0;">Open Trades</h4>
+            <span id="trades-count" class="source-platform">0 POS</span>
+        </div>
+        
+        <div id="open-trades-grid">
+            <div class="state-msg" style="padding: 20px 0; font-size: 12px;">In attesa di dati da MT5...</div>
+        </div>
+    </div>
+</div>

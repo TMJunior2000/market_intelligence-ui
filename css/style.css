@@ -395,6 +395,92 @@ img { display: block; max-width: 100%; }
   font-family: var(--font-mono);
 }
 
+/* --- LIVE TERMINAL STYLES --- */
+.live-terminal-wrapper {
+    position: sticky;
+    top: calc(var(--navbar-h) + 32px); /* Resta fisso mentre scrolli le news */
+}
+
+.terminal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.account-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.acc-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.acc-item label {
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+}
+
+.acc-item span {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+/* Stile righe operazioni */
+.trade-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+}
+
+.trade-row:last-child { border-bottom: none; }
+
+.trade-info-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.trade-symbol {
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.trade-details {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.trade-profit {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* Badge dinamici BUY/SELL */
+.trade-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    margin-right: 4px;
+}
+.badge-buy { background: var(--bullish-bg); color: var(--bullish); }
+.badge-sell { background: var(--bearish-bg); color: var(--bearish); }
+
 /* ---- FEED GRID ---- */
 .feed-grid {
   display: grid;
@@ -544,6 +630,29 @@ img { display: block; max-width: 100%; }
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-muted);
+}
+
+/* Layout Dashboard a due colonne */
+.dashboard-layout {
+    display: grid;
+    grid-template-columns: 350px 1fr; /* Sidebar fissa, Feed flessibile */
+    gap: 32px;
+    align-items: start;
+}
+
+.sidebar-operativa {
+    position: sticky;
+    top: calc(var(--navbar-h) + 20px);
+}
+
+/* Responsive: su mobile il terminale va sopra il feed */
+@media (max-width: 1024px) {
+    .dashboard-layout {
+        grid-template-columns: 1fr;
+    }
+    .sidebar-operativa {
+        position: static;
+    }
 }
 
 /* ---- STATES ---- */
