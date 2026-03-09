@@ -233,3 +233,28 @@ function runRiskMath(account, asset) {
         }
     }
 }
+
+/**
+ * Funzione di utilità per renderizzare le righe del sentiment
+ * (Re-inserita per correggere il ReferenceError)
+ */
+function renderSentimentRow(label, sentiment) {
+    const s = (sentiment || 'UNKNOWN').toUpperCase();
+    let color = 'var(--text-muted)';
+    let bg = 'var(--bg-subtle)';
+    
+    if (s === 'BULLISH') { 
+        color = 'var(--bullish)'; 
+        bg = 'var(--bullish-bg)'; 
+    } else if (s === 'BEARISH') { 
+        color = 'var(--bearish)'; 
+        bg = 'var(--bearish-bg)'; 
+    }
+    
+    return `
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">${label}</span>
+            <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: ${color}; background: ${bg}; padding: 4px 12px; border-radius: 4px; min-width: 85px; text-align: center;">${s}</span>
+        </div>
+    `;
+}
