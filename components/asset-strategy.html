@@ -15,17 +15,17 @@
             <input type="number" id="in-risk-pc" value="1.0" step="0.1" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">
         </div>
         <div id="group-lots" style="display:none;">
-            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">LOTS <i class="fas fa-question-circle" title="Dimensione della posizione. Verrà corretta automaticamente se inferiore al minimo consentito."></i></label>
+            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">LOTS <i class="fas fa-question-circle" title="Dimensione della posizione. Verrà corretta automaticamente se inferiore al minimo consentito dal broker."></i></label>
             <input type="number" id="in-lots" value="1.00" step="0.01" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">
         </div>
 
         <div>
-            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">ENTRY PRICE <i class="fas fa-question-circle" title="Prezzo di apertura. Lascia il valore live per ordini istantanei."></i></label>
+            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">ENTRY PRICE <i class="fas fa-question-circle" title="Prezzo di apertura. Lascia il valore live per ordini istantanei o inserisci il prezzo per ordini limit/stop."></i></label>
             <input type="number" id="in-entry-price" step="0.00001" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">
         </div>
 
         <div>
-            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">STOP LOSS <i class="fas fa-question-circle" title="Il livello di prezzo a cui l'operazione verrà chiusa automaticamente in perdita."></i></label>
+            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">STOP LOSS <i class="fas fa-question-circle" title="Livello di prezzo per la chiusura automatica in perdita."></i></label>
             <input type="number" id="in-sl-price" value="0.00" step="0.00001" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">
         </div>
     </div>
@@ -37,17 +37,17 @@
             <div id="out-risk-res" style="font-size:10px; color:var(--text-muted);">-- %</div>
         </div>
         <div class="res-card" style="background:white; padding:10px; border-radius:8px; border:1px solid var(--border);">
-            <small style="font-size:8px; color:var(--text-muted);">SIZE / LEVA <i class="fas fa-question-circle" title="Lotti necessari e Leva reale dello strumento applicata dal broker."></i></small>
+            <small style="font-size:8px; color:var(--text-muted);">SIZE / LEVA <i class="fas fa-question-circle" title="Dimensione calcolata e Leva reale dello strumento ottenuta tramite calcolo margine MT5."></i></small>
             <div id="out-lots" style="font-weight:800; font-size:14px;">0.00</div>
             <div id="out-leverage" style="font-size:10px; color:var(--text-muted);">Leva 1:--</div>
         </div>
         <div class="res-card" style="background:white; padding:10px; border-radius:8px; border:1px solid var(--border); grid-column: span 2; display:flex; justify-content:space-between; align-items:center;">
             <div>
-                <small style="font-size:8px; color:var(--text-muted);">MARGINE IMPEGNATO <i class="fas fa-question-circle" title="Cauzione bloccata dal broker. Dipende dalla leva specifica dell'asset."></i></small>
+                <small style="font-size:8px; color:var(--text-muted);">MARGINE IMPEGNATO <i class="fas fa-question-circle" title="Capitale bloccato dal broker per questa specifica operazione."></i></small>
                 <div id="out-margin" style="font-weight:700; font-size:12px;">$ 0.00</div>
             </div>
             <div style="text-align:right;">
-                <small style="font-size:8px; color:var(--text-muted);">MARGINE LIBERO <i class="fas fa-question-circle" title="Capitale disponibile per nuove operazioni."></i></small>
+                <small style="font-size:8px; color:var(--text-muted);">MARGINE LIBERO <i class="fas fa-question-circle" title="Fondi residui disponibili per nuove posizioni."></i></small>
                 <div id="out-free-margin" style="font-weight:700; font-size:12px; color:var(--bullish);">$ 0.00</div>
             </div>
         </div>

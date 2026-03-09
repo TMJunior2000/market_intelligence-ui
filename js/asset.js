@@ -174,7 +174,7 @@ function updateAssetCalculations(mt5Data) {
 
     if (!asset || !account) return;
 
-    // 1. Aggiorna Info Live nella Hero (Inclusi nuovi campi)
+    // Aggiornamento etichette live nella Hero
     const updateEl = (id, val) => {
         const el = document.getElementById(id);
         if(el) el.innerText = val;
@@ -190,50 +190,43 @@ function updateAssetCalculations(mt5Data) {
     updateEl('hero-live-swapl', asset.swap_long);
     updateEl('hero-live-swaps', asset.swap_short);
 
-    // 2. Calcolo Termometro Esposizione (HEAT) - CORRETTO
+    // Calcolo HEAT (Esposizione totale)
     let totalOpenRiskCash = 0;
     trades.forEach(t => {
         if (t.sl > 0) {
-            // Calcoliamo la distanza tra ingresso e stop loss
             const dist = Math.abs(t.price_open - t.sl);
-            // Trasformiamo la distanza in numero di ticks reali
             const points = dist / (asset.tick_size || 0.01);
-            // Moltiplichiamo i ticks per il valore monetario di 1 tick e per il volume (lotti)
-            // RIMOSSO IL / 0.1 ERRATO
             totalOpenRiskCash += (points * asset.tick_value * t.volume); 
         }
     });
     
     const openRiskPc = (totalOpenRiskCash / account.equity) * 100;
-    
     const meter = document.getElementById('exposure-meter');
     if(meter) {
         meter.innerText = `HEAT: ${openRiskPc.toFixed(1)}%`;
-        // Colore dinamico in base all'esposizione
         meter.style.color = openRiskPc > 5 ? 'var(--bearish)' : (openRiskPc > 2 ? '#f39c12' : 'var(--bullish)');
     }
 
-    // 3. Esegui Calcolo Risk Terminal
+    // Esegui calcolo Risk Terminal
     runRiskMath(account, asset);
 }
 
 /**
- * LOGICA OPERATIVA DEL TERMINALE - VERSIONE DEFINITIVA
+ * LOGICA MATEMATICA RISK TERMINAL
  */
-
 function runRiskMath(account, asset) {
     const slPrice = parseFloat(document.getElementById('in-sl-price')?.value) || 0;
     const entryInputEl = document.getElementById('in-entry-price');
     const lotsInputEl = document.getElementById('in-lots');
     
-    // 1. SINCRONIZZAZIONE PREZZI
+    // 1. SINCRONIZZAZIONE PREZZO ENTRY
     const livePrice = asset.price || 0;
     if (entryInputEl && !entryInputEl.value && livePrice > 0) {
         entryInputEl.value = livePrice;
     }
     const entryPrice = parseFloat(entryInputEl?.value) || livePrice || 0;
 
-    // 2. RECUPERO PARAMETRI MT5
+    // 2. PARAMETRI MT5
     const tickValue = asset.tick_value || 0;
     const tickSize = asset.tick_size || 0.00001;
     const volMin = asset.volume_min || 0.01;
@@ -241,7 +234,6 @@ function runRiskMath(account, asset) {
     const contractSize = asset.contract_size || 1;
     const accLeverage = account.leverage || 30;
 
-    // Se mancano dati critici, esci
     if (entryPrice === 0 || slPrice === 0) return;
 
     // 3. CALCOLO DISTANZA
@@ -257,7 +249,7 @@ function runRiskMath(account, asset) {
 
         lots = riskCash / (points * tickValue);
         
-        // Validazione: Non meno del MIN LOT e arrotondamento allo STEP
+        // Validazione Min Lot e Step
         lots = Math.floor(lots / volStep) * volStep;
         if (lots < volMin) lots = volMin;
 
@@ -268,10 +260,10 @@ function runRiskMath(account, asset) {
     } else {
         lots = parseFloat(lotsInputEl.value) || 0;
         
-        // Validazione Cruciale: Forza il Minimo se l'utente inserisce 0.1 dove il min è 1
+        // Forza Minimo Broker se l'utente scende troppo (es. 0.10 su JD dove min è 1)
         if (lots < volMin) {
             lots = volMin;
-            lotsInputEl.value = volMin; // Aggiorna visivamente il campo
+            lotsInputEl.value = volMin;
         }
         lots = Math.round(lots / volStep) * volStep;
 
@@ -279,35 +271,37 @@ function runRiskMath(account, asset) {
         riskPc = (riskCash / account.equity) * 100;
     }
 
-    // --- 4. CALCOLO LEVA REALE DELL'ASSET ---
-    // La leva dell'asset è: (Valore di Mercato per 1 lotto) / (Margine richiesto per 1 lotto)
+    // --- 4. CALCOLO LEVA REALE TRAMITE MARGINE MT5 ---
+    // Utilizziamo il valore margin_calc_1_lot calcolato da Python tramite order_calc_margin()
     let assetLeverage = accLeverage;
-    if (asset.margin_initial && asset.margin_initial > 0) {
-        // Se il broker specifica un margine fisso (es. 0.54 per JD), calcoliamo la leva derivata
-        assetLeverage = Math.round((entryPrice * contractSize) / asset.margin_initial);
+    if (asset.margin_calc_1_lot && asset.margin_calc_1_lot > 0) {
+        // Formula inversa: Leva = (Prezzo * Contratto) / Margine per 1 lotto
+        assetLeverage = (entryPrice * contractSize) / asset.margin_calc_1_lot;
     }
 
-    // --- 5. AGGIORNAMENTO UI ---
+    // --- 5. AGGIORNAMENTO INTERFACCIA ---
     // Money at Risk
     if(document.getElementById('out-cash')) document.getElementById('out-cash').innerText = `$ ${riskCash.toFixed(2)}`;
     if(document.getElementById('out-risk-res')) document.getElementById('out-risk-res').innerText = `${riskPc.toFixed(2)} %`;
     
-    // Size e Leva Asset
+    // Size e Leva
     if(document.getElementById('out-lots')) document.getElementById('out-lots').innerText = lots.toFixed(2);
     const outLeverageEl = document.getElementById('out-leverage');
     if (outLeverageEl) {
-        outLeverageEl.innerText = `Leva Asset 1:${assetLeverage}`;
-        // Colore arancione se la leva è più restrittiva di quella del conto
-        outLeverageEl.style.color = assetLeverage < accLeverage ? '#e67e22' : 'var(--text-muted)';
+        const roundedLeva = Math.round(assetLeverage);
+        outLeverageEl.innerText = roundedLeva <= 1 ? "Leva Asset 1:1 (SPOT)" : `Leva Asset 1:${roundedLeva}`;
+        outLeverageEl.style.color = roundedLeva < accLeverage ? '#e67e22' : 'var(--text-muted)';
     }
 
     // Margini
-    const notionalValue = lots * contractSize * entryPrice;
-    const marginReq = notionalValue / assetLeverage;
+    // Margine totale = (Margine per 1 lotto) * Lotti inseriti
+    // Usiamo il dato di MT5 per la massima precisione
+    const marginReq = (asset.margin_calc_1_lot || (notionalValue / accLeverage)) * lots;
 
     const outMarginEl = document.getElementById('out-margin');
     if (outMarginEl) {
         outMarginEl.innerText = `$ ${marginReq.toFixed(2)}`;
+        
         if (marginReq > (account.margin_free || 0)) {
             outMarginEl.style.color = 'var(--bearish)';
             outMarginEl.style.fontWeight = '900';
