@@ -25,18 +25,16 @@ const realtimeBridge = {
         realtimeBridge.channel
             // 1. ASCOLTO PING (Health Check)
             .on('broadcast', { event: 'ping' }, () => {
-                // Prendiamo il ticker dall'URL corrente
                 const urlParams = new URLSearchParams(window.location.search);
-                const ticker = urlParams.get('ticker') || "EURUSD";
-
-                console.log("Rispondo al PING per l'asset:", ticker);
+                const ticker = urlParams.get('ticker'); // Niente fallback qui!
 
                 realtimeBridge.channel.send({
                     type: 'broadcast',
                     event: 'pong',
                     payload: { 
                         status: 'online', 
-                        active_asset: ticker // <--- Python userà questo per fare mt5.symbol_info(ticker)
+                        // Se ticker è null, inviamo "DASHBOARD"
+                        active_asset: ticker ? ticker : "DASHBOARD" 
                     }
                 });
             })
