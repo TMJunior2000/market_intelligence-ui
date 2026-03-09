@@ -22,21 +22,27 @@ const realtimeBridge = {
             }
         });
 
+        let lastTrackedTicker = null;
+
         realtimeBridge.channel
             // 1. ASCOLTO PING (Health Check)
             .on('broadcast', { event: 'ping' }, () => {
                 const urlParams = new URLSearchParams(window.location.search);
-                const ticker = urlParams.get('ticker'); 
+                const ticker = urlParams.get('ticker');
+                const currentStatus = ticker ? ticker : "DASHBOARD";
 
-                console.log("PING ricevuto. Ticker rilevato:", ticker || "DASHBOARD");
+                // Se l'utente ha cambiato pagina, logghiamo lo switch
+                if (currentStatus !== lastTrackedTicker) {
+                    console.log("🔄 Switch rilevato:", currentStatus);
+                    lastTrackedTicker = currentStatus;
+                }
 
                 realtimeBridge.channel.send({
                     type: 'broadcast',
                     event: 'pong',
                     payload: { 
                         status: 'online', 
-                        // Se ticker è null (sei in home), invia DASHBOARD
-                        active_asset: ticker ? ticker : "DASHBOARD" 
+                        active_asset: currentStatus
                     }
                 });
             })
