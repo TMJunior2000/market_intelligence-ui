@@ -29,20 +29,16 @@ const realtimeBridge = {
             .on('broadcast', { event: 'ping' }, () => {
                 const urlParams = new URLSearchParams(window.location.search);
                 const ticker = urlParams.get('ticker');
-                const currentStatus = ticker ? ticker : "DASHBOARD";
+                const currentAsset = ticker ? ticker.trim() : "DASHBOARD";
 
-                // Se l'utente ha cambiato pagina, logghiamo lo switch
-                if (currentStatus !== lastTrackedTicker) {
-                    console.log("🔄 Switch rilevato:", currentStatus);
-                    lastTrackedTicker = currentStatus;
-                }
+                console.log("📡 [PONG] Segnalo a Python:", currentAsset);
 
                 realtimeBridge.channel.send({
                     type: 'broadcast',
                     event: 'pong',
                     payload: { 
                         status: 'online', 
-                        active_asset: currentStatus
+                        active_asset: currentAsset // Assicurati che il nome sia identico a Python
                     }
                 });
             })
