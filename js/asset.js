@@ -200,14 +200,16 @@ function updateAssetCalculations(mt5Data) {
         }
     });
     
-    const openRiskPc = (totalOpenRiskCash / account.equity) * 100;
+    // Salviamo questo dato nella window per poterlo usare in runRiskMath
+    window.currentOpenRiskCash = totalOpenRiskCash;
+
+    const openRiskPc = (totalOpenRiskCash / account.balance) * 100; // Meglio usare Balance
     const meter = document.getElementById('exposure-meter');
     if(meter) {
         meter.innerText = `HEAT: ${openRiskPc.toFixed(1)}%`;
         meter.style.color = openRiskPc > 5 ? 'var(--bearish)' : (openRiskPc > 2 ? '#f39c12' : 'var(--bullish)');
     }
 
-    // Esegui calcolo Risk Terminal
     runRiskMath(account, asset);
 }
 
@@ -219,48 +221,56 @@ function runRiskMath(account, asset) {
     const entryInputEl = document.getElementById('in-entry-price');
     const lotsInputEl = document.getElementById('in-lots');
     
-    // 1. SINCRONIZZAZIONE PREZZO ENTRY
     const livePrice = asset.price || 0;
     if (entryInputEl && !entryInputEl.value && livePrice > 0) {
         entryInputEl.value = livePrice;
     }
     const entryPrice = parseFloat(entryInputEl?.value) || livePrice || 0;
 
-    // 2. PARAMETRI MT5
+    // --- NUOVO: Rilevamento Direzione (BUY/SELL) ---
+    const dirBadge = document.getElementById('trade-direction-badge');
+    if (dirBadge) {
+        if (slPrice === 0) {
+            dirBadge.innerText = "INSERISCI S.L. PER DIREZIONE";
+            dirBadge.style.background = "var(--bg-subtle)";
+            dirBadge.style.color = "var(--text-muted)";
+        } else if (slPrice < entryPrice) {
+            dirBadge.innerText = "⬆️ LONG (BUY)";
+            dirBadge.style.background = "var(--bullish-bg)";
+            dirBadge.style.color = "var(--bullish)";
+        } else if (slPrice > entryPrice) {
+            dirBadge.innerText = "⬇️ SHORT (SELL)";
+            dirBadge.style.background = "var(--bearish-bg)";
+            dirBadge.style.color = "var(--bearish)";
+        }
+    }
+
     const tickValue = asset.tick_value || 0;
     const tickSize = asset.tick_size || 0.00001;
     const volMin = asset.volume_min || 0.01;
     const volStep = asset.volume_step || 0.01;
     const contractSize = asset.contract_size || 1;
-    const accLeverage = account.leverage || 30;
+    const accLeverage = account.leverage || 50;
 
     if (entryPrice === 0 || slPrice === 0) return;
 
-    // 3. CALCOLO DISTANZA
     const distance = Math.abs(entryPrice - slPrice);
     const points = distance / tickSize;
 
     let lots, riskPc, riskCash;
 
-    // --- MODALITÀ AUTO ---
     if (currentRiskMode === 'auto') {
         riskPc = parseFloat(document.getElementById('in-risk-pc').value) || 0;
-        riskCash = account.equity * (riskPc / 100);
+        riskCash = account.balance * (riskPc / 100); // Uso Balance invece di Equity per stabilità
 
         lots = riskCash / (points * tickValue);
-        
-        // Validazione Min Lot e Step
         lots = Math.floor(lots / volStep) * volStep;
         if (lots < volMin) lots = volMin;
 
         riskCash = lots * points * tickValue;
-        riskPc = (riskCash / account.equity) * 100;
-
-    // --- MODALITÀ MANUAL ---
+        riskPc = (riskCash / account.balance) * 100;
     } else {
         lots = parseFloat(lotsInputEl.value) || 0;
-        
-        // Forza Minimo Broker se l'utente scende troppo (es. 0.10 su JD dove min è 1)
         if (lots < volMin) {
             lots = volMin;
             lotsInputEl.value = volMin;
@@ -268,52 +278,77 @@ function runRiskMath(account, asset) {
         lots = Math.round(lots / volStep) * volStep;
 
         riskCash = lots * points * tickValue;
-        riskPc = (riskCash / account.equity) * 100;
+        riskPc = (riskCash / account.balance) * 100;
     }
 
-    // --- 4. CALCOLO LEVA REALE TRAMITE MARGINE MT5 ---
-    // Utilizziamo il valore margin_calc_1_lot calcolato da Python tramite order_calc_margin()
-    let assetLeverage = accLeverage;
+    let finalLeverage = accLeverage; 
     if (asset.margin_calc_1_lot && asset.margin_calc_1_lot > 0) {
-        // Formula inversa: Leva = (Prezzo * Contratto) / Margine per 1 lotto
-        assetLeverage = (entryPrice * contractSize) / asset.margin_calc_1_lot;
+        const theoreticalAssetLeva = (entryPrice * contractSize) / asset.margin_calc_1_lot;
+        finalLeverage = Math.min(theoreticalAssetLeva, accLeverage);
     }
 
-    // --- 5. AGGIORNAMENTO INTERFACCIA ---
-    // Money at Risk
+    // --- AGGIORNAMENTO INTERFACCIA (Singolo Trade) ---
     if(document.getElementById('out-cash')) document.getElementById('out-cash').innerText = `$ ${riskCash.toFixed(2)}`;
     if(document.getElementById('out-risk-res')) document.getElementById('out-risk-res').innerText = `${riskPc.toFixed(2)} %`;
-    
-    // Size e Leva
     if(document.getElementById('out-lots')) document.getElementById('out-lots').innerText = lots.toFixed(2);
+    
     const outLeverageEl = document.getElementById('out-leverage');
     if (outLeverageEl) {
-        const roundedLeva = Math.round(assetLeverage);
-        outLeverageEl.innerText = roundedLeva <= 1 ? "Leva Asset 1:1 (SPOT)" : `Leva Asset 1:${roundedLeva}`;
-        outLeverageEl.style.color = roundedLeva < accLeverage ? '#e67e22' : 'var(--text-muted)';
+        const roundedLeva = Math.round(finalLeverage);
+        outLeverageEl.innerText = roundedLeva <= 1 ? "Leva 1:1 (SPOT)" : `Leva Applicata 1:${roundedLeva}`;
+        outLeverageEl.style.color = finalLeverage < accLeverage ? '#e67e22' : 'var(--text-muted)';
     }
 
-    // Margini
-    // Margine totale = (Margine per 1 lotto) * Lotti inseriti
-    // Usiamo il dato di MT5 per la massima precisione
-    const marginReq = (asset.margin_calc_1_lot || (notionalValue / accLeverage)) * lots;
+    const notionalValue = lots * contractSize * entryPrice;
+    const marginReq = notionalValue / finalLeverage;
 
     const outMarginEl = document.getElementById('out-margin');
     if (outMarginEl) {
         outMarginEl.innerText = `$ ${marginReq.toFixed(2)}`;
-        
         if (marginReq > (account.margin_free || 0)) {
             outMarginEl.style.color = 'var(--bearish)';
-            outMarginEl.style.fontWeight = '900';
             outMarginEl.innerText += " (⚠️ INS.)";
         } else {
             outMarginEl.style.color = 'inherit';
-            outMarginEl.style.fontWeight = '700';
         }
     }
-
     if(document.getElementById('out-free-margin')) {
         document.getElementById('out-free-margin').innerText = `$ ${(account.margin_free || 0).toFixed(2)}`;
+    }
+
+    // --- NUOVO: SCENARIO PEGGIOR (GLOBAL RISK) ---
+    const openTradesWorstCase = window.currentWorstCasePnLCash || 0; // Può essere + o -
+    
+    // Saldo Proiettato = Saldo attuale + Profitti/Perdite latenti agli SL - Rischio del nuovo trade
+    const totalApocalypsePnL = openTradesWorstCase - riskCash;
+    const projectedBalance = account.balance + totalApocalypsePnL;
+
+    // Aggiornamento Valori UI
+    if (document.getElementById('out-open-risk')) {
+        const el = document.getElementById('out-open-risk');
+        el.innerText = openTradesWorstCase >= 0 ? `+$ ${openTradesWorstCase.toFixed(2)}` : `-$ ${Math.abs(openTradesWorstCase).toFixed(2)}`;
+        el.style.color = openTradesWorstCase >= 0 ? 'var(--bullish)' : 'var(--bearish)';
+    }
+    
+    if (document.getElementById('out-new-risk')) document.getElementById('out-new-risk').innerText = `-$ ${riskCash.toFixed(2)}`;
+    
+    if (document.getElementById('out-projected-balance')) {
+        const el = document.getElementById('out-projected-balance');
+        el.innerText = `$ ${projectedBalance.toFixed(2)}`;
+        // Se il saldo proiettato è MAGGIORE di quello attuale, coloralo di verde!
+        el.style.color = projectedBalance >= account.balance ? 'var(--bullish)' : 'var(--text-primary)';
+    }
+    
+    const totalRiskPcEl = document.getElementById('out-total-risk-pc');
+    if (totalRiskPcEl) {
+        if (totalApocalypsePnL >= 0) {
+            totalRiskPcEl.innerText = `PROFITTO GARANTITO: +$ ${totalApocalypsePnL.toFixed(2)}`;
+            totalRiskPcEl.style.color = 'var(--bullish)';
+        } else {
+            const riskPcStr = ((Math.abs(totalApocalypsePnL) / account.balance) * 100).toFixed(1);
+            totalRiskPcEl.innerText = `RISCHIO TOTALE: ${riskPcStr}%`;
+            totalRiskPcEl.style.color = riskPcStr > 10 ? 'var(--bearish)' : 'var(--text-primary)';
+        }
     }
 }
 
