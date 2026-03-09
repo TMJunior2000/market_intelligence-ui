@@ -249,7 +249,6 @@ function runRiskMath(account, asset) {
     const volMin = asset.volume_min || 0.01;
     const volStep = asset.volume_step || 0.01;
     const contractSize = asset.contract_size || 1;
-    const accLeverage = account.leverage || 50;
 
     if (entryPrice === 0 || slPrice === 0) return;
 
@@ -259,17 +258,16 @@ function runRiskMath(account, asset) {
     let lots, riskPc, riskCash;
     let isImpossible = false;
 
+    // --- CALCOLO SIZE ---
     if (currentRiskMode === 'auto') {
         const requestedRiskPc = parseFloat(document.getElementById('in-risk-pc').value) || 0;
         const requestedRiskCash = account.balance * (requestedRiskPc / 100);
 
-        // Calcolo teorico lotti
         lots = requestedRiskCash / (points * tickValue);
         
-        // Verifica se i lotti teorici sono sotto il minimo del broker
         if (lots < volMin && requestedRiskPc > 0) {
             isImpossible = true;
-            lots = volMin; // Forziamo al minimo per mostrare il rischio reale
+            lots = volMin; 
         } else {
             lots = Math.floor(lots / volStep) * volStep;
         }
@@ -284,40 +282,55 @@ function runRiskMath(account, asset) {
         riskPc = (riskCash / account.balance) * 100;
     }
 
-    // --- LOGICA DI BLOCCO E WARNING ---
+    // --- CALCOLO LEVA REALE (BASATO SOLO SU MT5) ---
+    // Usiamo direttamente il valore margin_calc_1_lot inviato dal Python
+    let effectiveLeva = account.leverage; // Fallback
+    if (asset.margin_calc_1_lot && asset.margin_calc_1_lot > 0) {
+        // Formula: (Prezzo * Contratto) / Margine per 1 lotto
+        effectiveLeva = (entryPrice * contractSize) / asset.margin_calc_1_lot;
+    }
+
+    // --- CALCOLO MARGINE REALE ---
+    // Margine totale = Margine per 1 lotto * Lotti inseriti
+    const marginReq = (asset.margin_calc_1_lot || 0) * lots;
+
+    // --- AGGIORNAMENTO INTERFACCIA ---
+    if(document.getElementById('out-cash')) document.getElementById('out-cash').innerText = `$ ${riskCash.toFixed(2)}`;
+    if(document.getElementById('out-lots')) document.getElementById('out-lots').innerText = lots.toFixed(2);
+    
+    // Mostra Leva
+    const outLeverageEl = document.getElementById('out-leverage');
+    if (outLeverageEl) {
+        const roundedLeva = Math.round(effectiveLeva);
+        outLeverageEl.innerText = roundedLeva <= 1 ? "Leva 1:1 (SPOT)" : `Leva Asset 1:${roundedLeva}`;
+        // Colore arancione se la leva dell'asset è diversa da quella base del conto (1:50)
+        outLeverageEl.style.color = Math.abs(roundedLeva - account.leverage) > 2 ? '#e67e22' : 'var(--text-muted)';
+    }
+
+    // Mostra Rischio % con alert se impossibile
     const outRiskResEl = document.getElementById('out-risk-res');
     if (outRiskResEl) {
         if (isImpossible) {
             outRiskResEl.innerHTML = `<span style="color:var(--bearish); font-weight:900;">${riskPc.toFixed(2)}%</span><br>
             <span style="font-size:7px; color:var(--bearish); display:block; line-height:1; margin-top:2px;">⚠️ S.L. TROPPO AMPIO PER 0.01 LOTTI</span>`;
-            document.getElementById('out-cash').style.color = 'var(--bearish)';
         } else {
             outRiskResEl.innerText = `${riskPc.toFixed(2)} %`;
             outRiskResEl.style.color = 'var(--text-muted)';
-            document.getElementById('out-cash').style.color = 'var(--bearish)';
         }
     }
 
-    // Calcolo Leva e Margine (Cap a 1:50)
-    let finalLeverage = accLeverage; 
-    if (asset.margin_calc_1_lot && asset.margin_calc_1_lot > 0) {
-        const theoreticalAssetLeva = (entryPrice * contractSize) / asset.margin_calc_1_lot;
-        finalLeverage = Math.min(theoreticalAssetLeva, accLeverage);
-    }
-
-    const marginReq = (lots * contractSize * entryPrice) / finalLeverage;
-    
-    // Aggiornamento UI
-    if(document.getElementById('out-cash')) document.getElementById('out-cash').innerText = `$ ${riskCash.toFixed(2)}`;
-    if(document.getElementById('out-lots')) document.getElementById('out-lots').innerText = lots.toFixed(2);
-    
+    // Mostra Margini
     const outMarginEl = document.getElementById('out-margin');
     if (outMarginEl) {
         outMarginEl.innerText = `$ ${marginReq.toFixed(2)}`;
         outMarginEl.style.color = marginReq > (account.margin_free || 0) ? 'var(--bearish)' : 'inherit';
     }
 
-    // Scenario Peggiore (Global Risk)
+    if(document.getElementById('out-free-margin')) {
+        document.getElementById('out-free-margin').innerText = `$ ${(account.margin_free || 0).toFixed(2)}`;
+    }
+
+    // --- SCENARIO PEGGIOR (GLOBAL RISK) ---
     const openTradesWorstCase = window.currentWorstCasePnLCash || 0;
     const totalApocalypsePnL = openTradesWorstCase - riskCash;
     const projectedBalance = account.balance + totalApocalypsePnL;
@@ -327,10 +340,23 @@ function runRiskMath(account, asset) {
         el.innerText = openTradesWorstCase >= 0 ? `+$ ${openTradesWorstCase.toFixed(2)}` : `-$ ${Math.abs(openTradesWorstCase).toFixed(2)}`;
         el.style.color = openTradesWorstCase >= 0 ? 'var(--bullish)' : 'var(--bearish)';
     }
+
     if (document.getElementById('out-projected-balance')) {
         const el = document.getElementById('out-projected-balance');
         el.innerText = `$ ${projectedBalance.toFixed(2)}`;
         el.style.color = projectedBalance >= account.balance ? 'var(--bullish)' : (projectedBalance < 0 ? 'var(--bearish)' : 'var(--text-primary)');
+    }
+
+    const totalRiskPcEl = document.getElementById('out-total-risk-pc');
+    if (totalRiskPcEl) {
+        if (totalApocalypsePnL >= 0) {
+            totalRiskPcEl.innerText = `PROFITTO GARANTITO: +$ ${totalApocalypsePnL.toFixed(2)}`;
+            totalRiskPcEl.style.color = 'var(--bullish)';
+        } else {
+            const riskPcStr = ((Math.abs(totalApocalypsePnL) / account.balance) * 100).toFixed(1);
+            totalRiskPcEl.innerText = `RISCHIO TOTALE: ${riskPcStr}%`;
+            totalRiskPcEl.style.color = riskPcStr > 10 ? 'var(--bearish)' : 'var(--text-primary)';
+        }
     }
 }
 
