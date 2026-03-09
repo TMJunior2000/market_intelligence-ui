@@ -47,26 +47,88 @@ async function loadAssetData(ticker) {
     }
 }
 
+let currentRiskMode = 'auto'; // 'auto' o 'manual'
+
 function renderHero(container, asset, insight) {
     container.innerHTML = `
-        <div class="asset-hero-content" style="background: white; padding: 40px; border: 1.5px solid var(--border); border-radius: var(--radius-lg); display: grid; grid-template-columns: 1fr 350px; gap: 60px; align-items: center;">
+        <div class="asset-hero-content" style="background: white; padding: 40px; border: 1.5px solid var(--border); border-radius: var(--radius-lg); display: grid; grid-template-columns: 1fr 280px 380px; gap: 40px; align-items: start;">
+            
             <div class="hero-info">
-                <span class="suggestion-ticker" style="font-size: 14px; background: var(--text-primary); color: white; padding: 4px 10px; border-radius: 4px;">${asset.ticker}</span>
-                <h1 style="font-family: var(--font-display); font-size: 48px; font-weight: 900; margin: 16px 0 8px; color: var(--text-primary); line-height: 1.1;">${asset.name_full}</h1>
-                <div style="display: flex; gap: 24px; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">
-                    <span><strong style="color: var(--text-secondary);">Gruppo:</strong> ${asset.asset_group}</span>
-                    <span><strong style="color: var(--text-secondary);">Profit:</strong> ${asset.currency_profit}</span>
-                    <span><strong style="color: var(--text-secondary);">Size:</strong> ${asset.contract_size}</span>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <span class="suggestion-ticker" style="font-size: 14px; background: var(--text-primary); color: white; padding: 4px 10px; border-radius: 4px;">${asset.ticker}</span>
+                    <div id="live-asset-badge" style="display:none; font-size:10px; font-weight:800; color:var(--bullish); background:var(--bullish-bg); padding:4px 8px; border-radius:4px; text-transform:uppercase;">
+                        <i class="fas fa-circle-notch fa-spin"></i> In Position
+                    </div>
+                </div>
+                <h1 style="font-family: var(--font-display); font-size: 42px; font-weight: 900; margin: 0 0 16px; color: var(--text-primary); line-height: 1.1;">${asset.name_full}</h1>
+                
+                <div class="mt5-specs-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase;">
+                    <span><strong style="color: var(--text-secondary);">Spread:</strong> <span id="hero-live-spread">--</span></span>
+                    <span><strong style="color: var(--text-secondary);">Tick Val:</strong> <span id="hero-live-tick">--</span></span>
+                    <span><strong style="color: var(--text-secondary);">Swap L:</strong> <span id="hero-live-swapl">--</span></span>
+                    <span><strong style="color: var(--text-secondary);">Swap S:</strong> <span id="hero-live-swaps">--</span></span>
                 </div>
             </div>
-            <div class="sentiment-matrix" style="border-left: 1.5px solid var(--border); padding-left: 40px; display: flex; flex-direction: column; gap: 20px;">
-                <h4 style="font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px;">Market Sentiment</h4>
+
+            <div class="sentiment-matrix" style="border-left: 1.5px solid var(--border); padding-left: 30px; display: flex; flex-direction: column; gap: 15px;">
+                <h4 style="font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase;">Market Sentiment</h4>
                 ${renderSentimentRow('Short Term', insight.sentiment_short)}
                 ${renderSentimentRow('Medium Term', insight.sentiment_medium)}
                 ${renderSentimentRow('Long Term', insight.sentiment_long)}
             </div>
+
+            <div id="risk-terminal-slot">
+                <div class="state-msg"><div class="spinner"></div></div>
+            </div>
         </div>
     `;
+
+    // Carichiamo il terminale operativo dal file componenti
+    loadRiskTerminal(asset);
+}
+
+async function loadRiskTerminal(asset) {
+    const slot = document.getElementById('risk-terminal-slot');
+    try {
+        const response = await fetch('components/asset-strategy.html');
+        slot.innerHTML = await response.text();
+        initTerminalLogic(asset);
+    } catch (err) {
+        slot.innerHTML = `<div class="state-msg">Errore terminale.</div>`;
+    }
+}
+
+// Funzione di calcolo che verrà richiamata dal realtime-bridge
+function updateAssetCalculations(mt5Data) {
+    const asset = mt5Data.current_asset;
+    const account = mt5Data.account;
+    const trades = mt5Data.trades;
+
+    // 1. Aggiorna Info Live nella Hero
+    document.getElementById('hero-live-spread').innerText = asset.spread;
+    document.getElementById('hero-live-tick').innerText = asset.tick_value.toFixed(2);
+    document.getElementById('hero-live-swapl').innerText = asset.swap_long;
+    document.getElementById('hero-live-swaps').innerText = asset.swap_short;
+
+    // 2. Calcolo Termometro Esposizione (Open Risk)
+    let totalOpenRiskCash = 0;
+    trades.forEach(t => {
+        if (t.sl > 0) {
+            const dist = Math.abs(t.price_open - t.sl);
+            const points = dist / asset.tick_size;
+            totalOpenRiskCash += (points * t.tick_value * (t.volume / 0.1)); 
+        }
+    });
+    const openRiskPc = (totalOpenRiskCash / account.equity) * 100;
+    
+    const meter = document.getElementById('exposure-meter');
+    if(meter) {
+        meter.innerText = `PORTFOLIO HEAT: ${openRiskPc.toFixed(1)}%`;
+        meter.style.color = openRiskPc > 5 ? 'var(--bearish)' : (openRiskPc > 2 ? '#f39c12' : 'var(--bullish)');
+    }
+
+    // 3. Esegui Calcolo Risk Terminal (Derivato o Diretto)
+    runRiskMath(account, asset);
 }
 
 function renderSentimentRow(label, sentiment) {
