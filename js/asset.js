@@ -64,12 +64,51 @@ function renderHero(container, asset, insight) {
                 <h1 style="font-family: var(--font-display); font-size: 42px; font-weight: 900; margin: 0 0 16px; color: var(--text-primary); line-height: 1.1;">${asset.name_full}</h1>
                 
                 <div class="mt5-specs-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase;">
-                    <span><strong style="color: var(--text-secondary);">Prezzo:</strong> <span id="hero-live-price">--</span></span>
-                    <span><strong style="color: var(--text-secondary);">Min Lot:</strong> <span id="hero-live-volmin">--</span></span>
-                    <span><strong style="color: var(--text-secondary);">Spread:</strong> <span id="hero-live-spread">--</span></span>
-                    <span><strong style="color: var(--text-secondary);">Tick Val:</strong> <span id="hero-live-tick">--</span></span>
-                    <span><strong style="color: var(--text-secondary);">Swap L:</strong> <span id="hero-live-swapl">--</span></span>
-                    <span><strong style="color: var(--text-secondary);">Swap S:</strong> <span id="hero-live-swaps">--</span></span>
+                    
+                    <span class="spec-item" title="Prezzo attuale di mercato (Ask/Last)">
+                        <strong style="color: var(--text-secondary);">Prezzo:</strong> <span id="hero-live-price">--</span> 
+                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
+                    </span>
+
+                    <span class="spec-item" title="Dimensione minima dell'ordine consentita dal broker">
+                        <strong style="color: var(--text-secondary);">Min Lot:</strong> <span id="hero-live-volmin">--</span>
+                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
+                    </span>
+
+                    <span class="spec-item" title="Dimensione massima dell'ordine consentita per singola operazione">
+                        <strong style="color: var(--text-secondary);">Max Lot:</strong> <span id="hero-live-volmax">--</span>
+                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
+                    </span>
+
+                    <span class="spec-item" title="Differenza tra prezzo Bid e Ask in punti">
+                        <strong style="color: var(--text-secondary);">Spread:</strong> <span id="hero-live-spread">--</span>
+                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
+                    </span>
+
+                    <span class="spec-item" title="Valore monetario di un singolo tick (variazione minima) per 1 lotto intero">
+                        <strong style="color: var(--text-secondary);">Tick Val:</strong> <span id="hero-live-tick">--</span>
+                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
+                    </span>
+
+                    <span class="spec-item" title="La variazione minima di prezzo possibile per questo asset">
+                        <strong style="color: var(--text-secondary);">Tick Size:</strong> <span id="hero-live-ticksize">--</span>
+                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
+                    </span>
+
+                    <span class="spec-item" title="Quantità di asset sottostante controllata da 1 lotto (es. 100 per Oro, 100.000 per Forex)">
+                        <strong style="color: var(--text-secondary);">Contract:</strong> <span id="hero-live-contract">--</span>
+                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
+                    </span>
+
+                    <span class="spec-item" title="Interesse pagato o ricevuto per mantenere una posizione Buy aperta durante la notte">
+                        <strong style="color: var(--text-secondary);">Swap L:</strong> <span id="hero-live-swapl">--</span>
+                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
+                    </span>
+
+                    <span class="spec-item" title="Interesse pagato o ricevuto per mantenere una posizione Sell aperta durante la notte">
+                        <strong style="color: var(--text-secondary);">Swap S:</strong> <span id="hero-live-swaps">--</span>
+                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
+                    </span>
                 </div>
             </div>
 
@@ -135,28 +174,42 @@ function updateAssetCalculations(mt5Data) {
 
     if (!asset || !account) return;
 
-    // 1. Aggiorna Info Live nella Hero
-    if(document.getElementById('hero-live-price')) document.getElementById('hero-live-price').innerText = asset.price;
-    if(document.getElementById('hero-live-volmin')) document.getElementById('hero-live-volmin').innerText = asset.volume_min;
-    if(document.getElementById('hero-live-spread')) document.getElementById('hero-live-spread').innerText = asset.spread;
-    if(document.getElementById('hero-live-tick')) document.getElementById('hero-live-tick').innerText = asset.tick_value.toFixed(2);
-    if(document.getElementById('hero-live-swapl')) document.getElementById('hero-live-swapl').innerText = asset.swap_long;
-    if(document.getElementById('hero-live-swaps')) document.getElementById('hero-live-swaps').innerText = asset.swap_short;
+    // 1. Aggiorna Info Live nella Hero (Inclusi nuovi campi)
+    const updateEl = (id, val) => {
+        const el = document.getElementById(id);
+        if(el) el.innerText = val;
+    };
 
-    // 2. Calcolo Termometro Esposizione (Open Risk)
+    updateEl('hero-live-price', asset.price);
+    updateEl('hero-live-volmin', asset.volume_min);
+    updateEl('hero-live-volmax', asset.volume_max || '--');
+    updateEl('hero-live-spread', asset.spread);
+    updateEl('hero-live-tick', asset.tick_value.toFixed(2));
+    updateEl('hero-live-ticksize', asset.tick_size);
+    updateEl('hero-live-contract', asset.contract_size);
+    updateEl('hero-live-swapl', asset.swap_long);
+    updateEl('hero-live-swaps', asset.swap_short);
+
+    // 2. Calcolo Termometro Esposizione (HEAT) - CORRETTO
     let totalOpenRiskCash = 0;
     trades.forEach(t => {
         if (t.sl > 0) {
+            // Calcoliamo la distanza tra ingresso e stop loss
             const dist = Math.abs(t.price_open - t.sl);
+            // Trasformiamo la distanza in numero di ticks reali
             const points = dist / (asset.tick_size || 0.01);
-            totalOpenRiskCash += (points * asset.tick_value * (t.volume / 0.1)); 
+            // Moltiplichiamo i ticks per il valore monetario di 1 tick e per il volume (lotti)
+            // RIMOSSO IL / 0.1 ERRATO
+            totalOpenRiskCash += (points * asset.tick_value * t.volume); 
         }
     });
+    
     const openRiskPc = (totalOpenRiskCash / account.equity) * 100;
     
     const meter = document.getElementById('exposure-meter');
     if(meter) {
         meter.innerText = `HEAT: ${openRiskPc.toFixed(1)}%`;
+        // Colore dinamico in base all'esposizione
         meter.style.color = openRiskPc > 5 ? 'var(--bearish)' : (openRiskPc > 2 ? '#f39c12' : 'var(--bullish)');
     }
 
