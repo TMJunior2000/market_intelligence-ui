@@ -214,10 +214,6 @@ function updateAssetCalculations(mt5Data) {
 /**
  * LOGICA MATEMATICA RISK TERMINAL
  */
-/**
- * LOGICA MATEMATICA RISK TERMINAL - VERSIONE AGGIORNATA
- * Correzione: Calcolo leva asset con CAP basato sulla leva conto
- */
 function runRiskMath(account, asset) {
     const slPrice = parseFloat(document.getElementById('in-sl-price')?.value) || 0;
     const entryInputEl = document.getElementById('in-entry-price');
@@ -236,16 +232,17 @@ function runRiskMath(account, asset) {
     const volMin = asset.volume_min || 0.01;
     const volStep = asset.volume_step || 0.01;
     const contractSize = asset.contract_size || 1;
-    const accLeverage = account.leverage || 50; // Leva massima del tuo account (es. 50)
+    const accLeverage = account.leverage || 30;
 
     if (entryPrice === 0 || slPrice === 0) return;
 
-    // 3. CALCOLO DISTANZA E RISCHIO
+    // 3. CALCOLO DISTANZA
     const distance = Math.abs(entryPrice - slPrice);
     const points = distance / tickSize;
 
     let lots, riskPc, riskCash;
 
+    // --- MODALITÀ AUTO ---
     if (currentRiskMode === 'auto') {
         riskPc = parseFloat(document.getElementById('in-risk-pc').value) || 0;
         riskCash = account.equity * (riskPc / 100);
@@ -258,10 +255,12 @@ function runRiskMath(account, asset) {
 
         riskCash = lots * points * tickValue;
         riskPc = (riskCash / account.equity) * 100;
+
+    // --- MODALITÀ MANUAL ---
     } else {
         lots = parseFloat(lotsInputEl.value) || 0;
         
-        // Forza Minimo Broker
+        // Forza Minimo Broker se l'utente scende troppo (es. 0.10 su JD dove min è 1)
         if (lots < volMin) {
             lots = volMin;
             lotsInputEl.value = volMin;
@@ -272,45 +271,32 @@ function runRiskMath(account, asset) {
         riskPc = (riskCash / account.equity) * 100;
     }
 
-    // --- 4. CALCOLO LEVA REALE CON CAP ACCOUNT ---
-    // Determiniamo la leva massima effettiva per questa operazione
-    let finalLeverage = accLeverage; 
-
+    // --- 4. CALCOLO LEVA REALE TRAMITE MARGINE MT5 ---
+    // Utilizziamo il valore margin_calc_1_lot calcolato da Python tramite order_calc_margin()
+    let assetLeverage = accLeverage;
     if (asset.margin_calc_1_lot && asset.margin_calc_1_lot > 0) {
-        // Leva teorica dell'asset (es. 1:200)
-        const assetTheoreticalLeva = (entryPrice * contractSize) / asset.margin_calc_1_lot;
-        
-        // Il margine reale è dettato dalla leva più bassa (più restrittiva)
-        // Se l'asset permette 1:200 ma il conto è 1:50, usiamo 50.
-        finalLeverage = Math.min(assetTheoreticalLeva, accLeverage);
+        // Formula inversa: Leva = (Prezzo * Contratto) / Margine per 1 lotto
+        assetLeverage = (entryPrice * contractSize) / asset.margin_calc_1_lot;
     }
 
     // --- 5. AGGIORNAMENTO INTERFACCIA ---
-    
     // Money at Risk
     if(document.getElementById('out-cash')) document.getElementById('out-cash').innerText = `$ ${riskCash.toFixed(2)}`;
     if(document.getElementById('out-risk-res')) document.getElementById('out-risk-res').innerText = `${riskPc.toFixed(2)} %`;
     
-    // Size e Visualizzazione Leva
+    // Size e Leva
     if(document.getElementById('out-lots')) document.getElementById('out-lots').innerText = lots.toFixed(2);
-    
     const outLeverageEl = document.getElementById('out-leverage');
     if (outLeverageEl) {
-        const roundedLeva = Math.round(finalLeverage);
-        if (roundedLeva <= 1) {
-            outLeverageEl.innerText = "Leva 1:1 (SPOT)";
-        } else {
-            outLeverageEl.innerText = `Leva Applicata 1:${roundedLeva}`;
-        }
-        
-        // Colore: Arancione se la leva è limitata dall'asset, Neutro se è quella del conto
-        outLeverageEl.style.color = finalLeverage < accLeverage ? '#e67e22' : 'var(--text-muted)';
+        const roundedLeva = Math.round(assetLeverage);
+        outLeverageEl.innerText = roundedLeva <= 1 ? "Leva Asset 1:1 (SPOT)" : `Leva Asset 1:${roundedLeva}`;
+        outLeverageEl.style.color = roundedLeva < accLeverage ? '#e67e22' : 'var(--text-muted)';
     }
 
-    // --- 6. CALCOLO MARGINE REALE ---
-    // Il margine richiesto è il Valore Nominale diviso la Leva Applicata (con il CAP)
-    const notionalValue = lots * contractSize * entryPrice;
-    const marginReq = notionalValue / finalLeverage;
+    // Margini
+    // Margine totale = (Margine per 1 lotto) * Lotti inseriti
+    // Usiamo il dato di MT5 per la massima precisione
+    const marginReq = (asset.margin_calc_1_lot || (notionalValue / accLeverage)) * lots;
 
     const outMarginEl = document.getElementById('out-margin');
     if (outMarginEl) {
