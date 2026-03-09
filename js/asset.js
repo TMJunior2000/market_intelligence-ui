@@ -229,7 +229,7 @@ function runRiskMath(account, asset) {
         entryInputEl.value = livePrice;
     }
     
-    // Il prezzo di ingresso per i calcoli NON è più obbligatoriamente il Live, ma quello scritto nel box!
+    // Il prezzo di ingresso per i calcoli è ora quello scritto nel box (limiti o mercato)
     const entryPrice = parseFloat(entryInputEl?.value) || livePrice || 0;
 
     const tickValue = asset.tick_value || 0;
@@ -242,7 +242,7 @@ function runRiskMath(account, asset) {
     // Se manca l'ingresso o lo Stop Loss, non calcolare
     if (entryPrice === 0 || slPrice === 0) return;
 
-    // 1. Calcolo reale della distanza in Ticks/Punti (Ora calcolato tra ENTRY e SL)
+    // 1. Calcolo reale della distanza in Ticks/Punti tra ENTRY e SL
     const distance = Math.abs(entryPrice - slPrice);
     const points = distance / tickSize;
 
@@ -274,30 +274,36 @@ function runRiskMath(account, asset) {
         riskPc = (riskCash / account.equity) * 100;
     }
 
+    // --- CALCOLO LEVA REALE DELL'ASSET ---
+    // Dedotta dai parametri del broker: (Prezzo * Contratto) / Margine Iniziale
+    let assetLeverage = accLeverage;
+    if (asset.margin_initial && asset.margin_initial > 0) {
+        assetLeverage = Math.round((entryPrice * contractSize) / asset.margin_initial);
+    }
+
     // --- AGGIORNAMENTO UI VALORI BASE ---
     if(document.getElementById('out-cash')) document.getElementById('out-cash').innerText = `$ ${riskCash.toFixed(2)}`;
     if(document.getElementById('out-risk-res')) document.getElementById('out-risk-res').innerText = `${riskPc.toFixed(2)} %`;
     if(document.getElementById('out-lots')) document.getElementById('out-lots').innerText = lots.toFixed(2);
     if(document.getElementById('out-free-margin')) document.getElementById('out-free-margin').innerText = `$ ${(account.margin_free || 0).toFixed(2)}`;
 
-    // --- PROVA DEL NOVE: LEVA E MARGINE CON ALLARME ROSSO ---
-    // Il valore nominale è basato sul tuo prezzo di ingresso desiderato, non su quello attuale
+    // --- PROVA DEL NOVE: MARGINE REALE ---
     const notionalValue = lots * contractSize * entryPrice;
-    
-    const marginReq = notionalValue / accLeverage;
-    const effectiveLeverage = notionalValue / account.equity;
+    const marginReq = notionalValue / assetLeverage;
 
     const outLeverageEl = document.getElementById('out-leverage');
     const outMarginEl = document.getElementById('out-margin');
 
     if (outLeverageEl) {
-        outLeverageEl.innerText = `Leva 1:${effectiveLeverage.toFixed(1)}`;
-        outLeverageEl.style.color = effectiveLeverage > accLeverage ? 'var(--bearish)' : 'var(--text-muted)';
+        outLeverageEl.innerText = `Leva Asset 1:${assetLeverage}`;
+        // Arancione se la leva dell'asset è più restrittiva di quella del conto
+        outLeverageEl.style.color = assetLeverage < accLeverage ? '#e67e22' : 'var(--text-muted)';
     }
 
     if (outMarginEl) {
         outMarginEl.innerText = `$ ${marginReq.toFixed(2)}`;
         
+        // Verifica disponibilità reale
         if (marginReq > account.margin_free) {
             outMarginEl.style.color = 'var(--bearish)';
             outMarginEl.style.fontWeight = '900';
