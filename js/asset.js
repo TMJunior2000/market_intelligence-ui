@@ -156,7 +156,7 @@ function setRiskMode(mode) {
 }
 
 function initTerminalLogic(asset) {
-    const inputs = ['in-risk-pc', 'in-lots', 'in-sl-pips'];
+    const inputs = ['in-risk-pc', 'in-lots', 'in-sl-price', 'in-entry-price'];
     inputs.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', () => {
@@ -219,9 +219,19 @@ function updateAssetCalculations(mt5Data) {
 
 function runRiskMath(account, asset) {
     const slPrice = parseFloat(document.getElementById('in-sl-price')?.value) || 0;
+    const entryInputEl = document.getElementById('in-entry-price');
     
-    // Variabili MT5 in tempo reale
-    const currentPrice = asset.price || 0;
+    // Variabili MT5 e controllo prezzo live
+    const livePrice = asset.price || 0;
+    
+    // Auto-popolamento: Se l'input è vuoto e abbiamo il prezzo da MT5, scrivilo nel campo
+    if (entryInputEl && !entryInputEl.value && livePrice > 0) {
+        entryInputEl.value = livePrice;
+    }
+    
+    // Il prezzo di ingresso per i calcoli NON è più obbligatoriamente il Live, ma quello scritto nel box!
+    const entryPrice = parseFloat(entryInputEl?.value) || livePrice || 0;
+
     const tickValue = asset.tick_value || 0;
     const tickSize = asset.tick_size || 0.00001;
     const volMin = asset.volume_min || 0.01;
@@ -229,11 +239,11 @@ function runRiskMath(account, asset) {
     const contractSize = asset.contract_size || 100000;
     const accLeverage = account.leverage || 30;
 
-    // Se non c'è prezzo o non è inserito lo Stop Loss, azzera tutto
-    if (currentPrice === 0 || slPrice === 0) return;
+    // Se manca l'ingresso o lo Stop Loss, non calcolare
+    if (entryPrice === 0 || slPrice === 0) return;
 
-    // 1. Calcolo reale della distanza in Ticks/Punti
-    const distance = Math.abs(currentPrice - slPrice);
+    // 1. Calcolo reale della distanza in Ticks/Punti (Ora calcolato tra ENTRY e SL)
+    const distance = Math.abs(entryPrice - slPrice);
     const points = distance / tickSize;
 
     let lots, riskPc, riskCash;
@@ -243,18 +253,13 @@ function runRiskMath(account, asset) {
         riskPc = parseFloat(document.getElementById('in-risk-pc').value) || 0;
         riskCash = account.equity * (riskPc / 100);
 
-        // Calcolo Lotti (ValoreUniversale MT5)
         lots = riskCash / (points * tickValue);
-
-        // Normalizzazione MT5: Arrotonda allo step corretto (es. 0.01)
         lots = Math.floor(lots / volStep) * volStep;
 
-        // Sicurezza: Non può essere inferiore al volume minimo del broker
         if (lots < volMin) {
             lots = volMin;
         }
 
-        // Ricalcola il rischio REALE con i lotti arrotondati/minimi
         riskCash = lots * points * tickValue;
         riskPc = (riskCash / account.equity) * 100;
 
@@ -262,7 +267,6 @@ function runRiskMath(account, asset) {
     } else {
         lots = parseFloat(document.getElementById('in-lots').value) || 0;
         
-        // Sicurezza manuale
         if (lots < volMin) lots = volMin;
         lots = Math.round(lots / volStep) * volStep;
 
@@ -277,8 +281,8 @@ function runRiskMath(account, asset) {
     if(document.getElementById('out-free-margin')) document.getElementById('out-free-margin').innerText = `$ ${(account.margin_free || 0).toFixed(2)}`;
 
     // --- PROVA DEL NOVE: LEVA E MARGINE CON ALLARME ROSSO ---
-    // Il valore nominale mosso a mercato (es. 0.10 lotti d'oro a 2100$ = 21.000$)
-    const notionalValue = lots * contractSize * currentPrice;
+    // Il valore nominale è basato sul tuo prezzo di ingresso desiderato, non su quello attuale
+    const notionalValue = lots * contractSize * entryPrice;
     
     const marginReq = notionalValue / accLeverage;
     const effectiveLeverage = notionalValue / account.equity;
@@ -288,16 +292,14 @@ function runRiskMath(account, asset) {
 
     if (outLeverageEl) {
         outLeverageEl.innerText = `Leva 1:${effectiveLeverage.toFixed(1)}`;
-        // Diventa rosso se la leva effettiva supera quella massima del conto
         outLeverageEl.style.color = effectiveLeverage > accLeverage ? 'var(--bearish)' : 'var(--text-muted)';
     }
 
     if (outMarginEl) {
         outMarginEl.innerText = `$ ${marginReq.toFixed(2)}`;
         
-        // ALLARME SALVAVITA: Il margine richiesto supera quello libero?
         if (marginReq > account.margin_free) {
-            outMarginEl.style.color = 'var(--bearish)'; // Rosso errore
+            outMarginEl.style.color = 'var(--bearish)';
             outMarginEl.style.fontWeight = '900';
             outMarginEl.innerText = `$ ${marginReq.toFixed(2)} (⚠️ INS.)`;
         } else {

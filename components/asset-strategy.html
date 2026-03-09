@@ -1,7 +1,7 @@
 <div class="terminal-container" style="background: var(--bg-body); padding: 24px; border-radius: 12px; border: 1.5px solid var(--border);">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
         <span style="font-size:9px; font-weight:800; color:var(--text-muted); letter-spacing:1px;">RISK CHECK</span>
-        <div id="exposure-meter" style="font-family:var(--font-mono); font-size:10px; font-weight:700;">HEAT: 0.0%</div>
+        <div id="exposure-meter" style="font-family:var(--font-mono); font-size:10px; font-weight:700;" title="Percentuale del saldo totale attualmente a rischio se tutti gli Stop Loss aperti venissero colpiti.">HEAT: 0.0% <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i></div>
     </div>
 
     <div class="mode-toggle" style="display:grid; grid-template-columns:1fr 1fr; gap:4px; background:rgba(0,0,0,0.05); padding:4px; border-radius:8px; margin-bottom:15px;">
@@ -9,39 +9,45 @@
         <button onclick="setRiskMode('manual')" id="btn-manual">MANUAL</button>
     </div>
 
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:20px;">
         <div id="group-risk">
-            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">RISK %</label>
+            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">RISK % <i class="fas fa-question-circle" title="Percentuale del capitale totale da rischiare in questo trade." style="cursor:help;"></i></label>
             <input type="number" id="in-risk-pc" value="1.0" step="0.1" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">
         </div>
         <div id="group-lots" style="display:none;">
-            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">LOTS</label>
+            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">LOTS <i class="fas fa-question-circle" title="Dimensione fissa dell'operazione inserita manualmente." style="cursor:help;"></i></label>
             <input type="number" id="in-lots" value="0.10" step="0.01" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">
         </div>
+        
         <div>
-            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">STOP LOSS (PREZZO)</label>
-            <input type="number" id="in-sl-price" value="0.00" step="0.01" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">
+            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">ENTRY PRICE <i class="fas fa-question-circle" title="Prezzo di ingresso (Acquisto o Vendita). Lascia il valore live per ordini a mercato." style="cursor:help;"></i></label>
+            <input type="number" id="in-entry-price" step="0.00001" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">
+        </div>
+
+        <div>
+            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">STOP LOSS <i class="fas fa-question-circle" title="Livello esatto di prezzo a cui l'operazione verrà chiusa in perdita." style="cursor:help;"></i></label>
+            <input type="number" id="in-sl-price" value="0.00" step="0.00001" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">
         </div>
     </div>
 
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
         <div class="res-card" style="background:white; padding:10px; border-radius:8px; border:1px solid var(--border);">
-            <small style="font-size:8px; color:var(--text-muted);">MONEY AT RISK</small>
+            <small style="font-size:8px; color:var(--text-muted);">MONEY AT RISK <i class="fas fa-question-circle" title="La potenziale perdita in valuta reale calcolata in base alla distanza tra Entry e Stop Loss." style="cursor:help;"></i></small>
             <div id="out-cash" style="font-weight:800; color:var(--bearish); font-size:14px;">$ 0.00</div>
             <div id="out-risk-res" style="font-size:10px; color:var(--text-muted);">-- %</div>
         </div>
         <div class="res-card" style="background:white; padding:10px; border-radius:8px; border:1px solid var(--border);">
-            <small style="font-size:8px; color:var(--text-muted);">SIZE / LEVA</small>
+            <small style="font-size:8px; color:var(--text-muted);">SIZE / LEVA <i class="fas fa-question-circle" title="SIZE: Lotti calcolati da inserire su MT5. LEVA: Rapporto tra controvalore mosso e capitale." style="cursor:help;"></i></small>
             <div id="out-lots" style="font-weight:800; font-size:14px;">0.00</div>
             <div id="out-leverage" style="font-size:10px; color:var(--text-muted);">Leva 1:--</div>
         </div>
         <div class="res-card" style="background:white; padding:10px; border-radius:8px; border:1px solid var(--border); grid-column: span 2; display:flex; justify-content:space-between; align-items:center;">
             <div>
-                <small style="font-size:8px; color:var(--text-muted);">MARGINE IMPEGNATO</small>
+                <small style="font-size:8px; color:var(--text-muted);">MARGINE IMPEGNATO <i class="fas fa-question-circle" title="Fondi bloccati dal broker per l'operazione. Diventa ROSSO se non hai sufficiente Margine Libero." style="cursor:help;"></i></small>
                 <div id="out-margin" style="font-weight:700; font-size:12px;">$ 0.00</div>
             </div>
             <div style="text-align:right;">
-                <small style="font-size:8px; color:var(--text-muted);">MARGINE LIBERO</small>
+                <small style="font-size:8px; color:var(--text-muted);">MARGINE LIBERO <i class="fas fa-question-circle" title="Fondi residui sul conto pronti per essere utilizzati in nuove posizioni." style="cursor:help;"></i></small>
                 <div id="out-free-margin" style="font-weight:700; font-size:12px; color:var(--bullish);">$ 0.00</div>
             </div>
         </div>
