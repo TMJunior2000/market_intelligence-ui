@@ -63,7 +63,9 @@ function renderHero(container, asset, insight) {
                 </div>
                 <h1 style="font-family: var(--font-display); font-size: 42px; font-weight: 900; margin: 0 0 16px; color: var(--text-primary); line-height: 1.1;">${asset.name_full}</h1>
                 
-                <div class="mt5-specs-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase;">
+                <div class="mt5-specs-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase;">
+                    <span><strong style="color: var(--text-secondary);">Prezzo:</strong> <span id="hero-live-price">--</span></span>
+                    <span><strong style="color: var(--text-secondary);">Min Lot:</strong> <span id="hero-live-volmin">--</span></span>
                     <span><strong style="color: var(--text-secondary);">Spread:</strong> <span id="hero-live-spread">--</span></span>
                     <span><strong style="color: var(--text-secondary);">Tick Val:</strong> <span id="hero-live-tick">--</span></span>
                     <span><strong style="color: var(--text-secondary);">Swap L:</strong> <span id="hero-live-swapl">--</span></span>
@@ -134,6 +136,8 @@ function updateAssetCalculations(mt5Data) {
     if (!asset || !account) return;
 
     // 1. Aggiorna Info Live nella Hero
+    if(document.getElementById('hero-live-price')) document.getElementById('hero-live-price').innerText = asset.price;
+    if(document.getElementById('hero-live-volmin')) document.getElementById('hero-live-volmin').innerText = asset.volume_min;
     if(document.getElementById('hero-live-spread')) document.getElementById('hero-live-spread').innerText = asset.spread;
     if(document.getElementById('hero-live-tick')) document.getElementById('hero-live-tick').innerText = asset.tick_value.toFixed(2);
     if(document.getElementById('hero-live-swapl')) document.getElementById('hero-live-swapl').innerText = asset.swap_long;
