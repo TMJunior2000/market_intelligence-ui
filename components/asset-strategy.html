@@ -1,30 +1,63 @@
-<div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+<div class="terminal-container" style="background: var(--bg-body); padding: 24px; border-radius: 12px; border: 1.5px solid var(--border);">
+    
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <span style="font-size:9px; font-weight:800; color:var(--text-muted); letter-spacing:1px;">RISK CHECK</span>
+        <div id="exposure-meter" style="font-family:var(--font-mono); font-size:10px; font-weight:700;" title="Esposizione totale del portafoglio (tiene conto dei profitti già bloccati agli Stop Loss).">HEAT: 0.0% <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i></div>
+    </div>
+
+    <div class="mode-toggle" style="display:grid; grid-template-columns:1fr 1fr; gap:4px; background:rgba(0,0,0,0.05); padding:4px; border-radius:8px; margin-bottom:15px;">
+        <button onclick="setRiskMode('auto')" id="btn-auto" class="active-tgl">AUTO</button>
+        <button onclick="setRiskMode('manual')" id="btn-manual">MANUAL</button>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:20px;">
+        <div id="group-risk">
+            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">RISK % <i class="fas fa-question-circle" title="Percentuale di capitale che accetti di perdere in questo trade."></i></label>
+            <input type="number" id="in-risk-pc" value="1.0" step="0.1" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">
+        </div>
+        <div id="group-lots" style="display:none;">
+            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">LOTS <i class="fas fa-question-circle" title="Dimensione della posizione. Verrà corretta automaticamente se inferiore al minimo consentito dal broker."></i></label>
+            <input type="number" id="in-lots" value="1.00" step="0.01" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">
+        </div>
+
+        <div>
+            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">ENTRY PRICE <i class="fas fa-question-circle" title="Prezzo di apertura. Lascia il valore live per ordini istantanei o inserisci il prezzo per ordini limit/stop."></i></label>
+            <input type="number" id="in-entry-price" step="0.00001" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">
+        </div>
+
+        <div>
+            <label style="font-size:9px; font-weight:700; color:var(--text-muted);">STOP LOSS <i class="fas fa-question-circle" title="Livello di prezzo per la chiusura automatica in perdita. Determina se il trade è LONG o SHORT."></i></label>
+            <input type="number" id="in-sl-price" value="0.00" step="0.00001" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">
+        </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
         
         <div id="trade-direction-badge" style="grid-column: span 2; text-align:center; padding: 6px; border-radius: 6px; font-weight: 800; font-size: 11px; background: var(--bg-subtle); color: var(--text-muted);">
             INSERISCI ENTRY E STOP LOSS PER DIREZIONE
         </div>
 
         <div class="res-card" style="background:white; padding:10px; border-radius:8px; border:1px solid var(--border);">
-            <small style="font-size:8px; color:var(--text-muted);">RISCHIO QUESTO TRADE</small>
+            <small style="font-size:8px; color:var(--text-muted);">RISCHIO QUESTO TRADE <i class="fas fa-question-circle" title="Dollari persi se questo specifico trade colpisce lo Stop Loss."></i></small>
             <div id="out-cash" style="font-weight:800; color:var(--bearish); font-size:14px;">$ 0.00</div>
             <div id="out-risk-res" style="font-size:10px; color:var(--text-muted);">-- %</div>
         </div>
         
         <div class="res-card" style="background:white; padding:10px; border-radius:8px; border:1px solid var(--border);">
-            <small style="font-size:8px; color:var(--text-muted);">SIZE / LEVA</small>
+            <small style="font-size:8px; color:var(--text-muted);">SIZE / LEVA <i class="fas fa-question-circle" title="Lotti esatti e Leva reale calcolata (il limite più severo tra Account e Asset)."></i></small>
             <div id="out-lots" style="font-weight:800; font-size:14px;">0.00</div>
             <div id="out-leverage" style="font-size:10px; color:var(--text-muted);">Leva 1:--</div>
         </div>
 
         <div class="res-card" style="background:var(--bg-body); padding:10px; border-radius:8px; border:1.5px dashed var(--bearish); grid-column: span 2;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
-                <small style="font-size:9px; font-weight:800; color:var(--text-primary);">WORST CASE SCENARIO (ALL S.L. HIT)</small>
+                <small style="font-size:9px; font-weight:800; color:var(--text-primary);">WORST CASE SCENARIO (ALL S.L. HIT) <i class="fas fa-question-circle" title="Simulazione: se adesso i mercati crollano e tutti i tuoi Stop Loss (aperti + questo nuovo) vengono colpiti."></i></small>
                 <small id="out-total-risk-pc" style="font-size:10px; font-weight:800; color:var(--bearish);">0.00%</small>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:end;">
                 <div>
-                    <div style="font-size:8px; color:var(--text-muted);">Rischio Aperto: <span id="out-open-risk">$ 0.00</span></div>
-                    <div style="font-size:8px; color:var(--text-muted);">Nuovo Trade: <span id="out-new-risk">$ 0.00</span></div>
+                    <div style="font-size:8px; color:var(--text-muted);">Portafoglio Attuale: <span id="out-open-risk" style="font-weight:700;">$ 0.00</span></div>
+                    <div style="font-size:8px; color:var(--text-muted);">Nuovo Trade: <span id="out-new-risk" style="font-weight:700;">$ 0.00</span></div>
                 </div>
                 <div style="text-align:right;">
                     <div style="font-size:8px; color:var(--text-muted);">Saldo Proiettato</div>
@@ -35,12 +68,14 @@
 
         <div class="res-card" style="background:white; padding:10px; border-radius:8px; border:1px solid var(--border); grid-column: span 2; display:flex; justify-content:space-between; align-items:center;">
             <div>
-                <small style="font-size:8px; color:var(--text-muted);">MARGINE IMPEGNATO</small>
+                <small style="font-size:8px; color:var(--text-muted);">MARGINE IMPEGNATO <i class="fas fa-question-circle" title="Cauzione trattenuta dal broker per aprire la posizione."></i></small>
                 <div id="out-margin" style="font-weight:700; font-size:12px;">$ 0.00</div>
             </div>
             <div style="text-align:right;">
-                <small style="font-size:8px; color:var(--text-muted);">MARGINE LIBERO</small>
+                <small style="font-size:8px; color:var(--text-muted);">MARGINE LIBERO <i class="fas fa-question-circle" title="Potere d'acquisto residuo."></i></small>
                 <div id="out-free-margin" style="font-weight:700; font-size:12px; color:var(--bullish);">$ 0.00</div>
             </div>
         </div>
+        
     </div>
+</div>
