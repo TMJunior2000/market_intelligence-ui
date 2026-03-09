@@ -1,16 +1,12 @@
 /**
- * ASSET.JS - Versione SPA Operativa
- * Rendering dei dati tecnici, sentiment e Risk Terminal
+ * ASSET.JS - Versione Manual Only
+ * Calcolo rischio e margini basati su lotti inseriti dall'utente
  */
-
-// Stato globale del terminale nella pagina
-let currentRiskMode = 'auto'; 
 
 async function loadAssetData(ticker) {
     const grid = document.getElementById('asset-feed-grid');
     const hero = document.getElementById('asset-hero');
 
-    // Reset e Spinner
     grid.innerHTML = '<div class="state-msg"><div class="spinner"></div></div>';
     hero.innerHTML = '';
 
@@ -32,10 +28,8 @@ async function loadAssetData(ticker) {
         const asset = insights[0].assets;
         const lastInsight = insights[0]; 
 
-        // 1. Render Hero base (Identità + Sentiment Matrix)
         renderHero(hero, asset, lastInsight);
 
-        // 2. Render Grid Storica
         grid.innerHTML = '';
         document.getElementById('asset-count').textContent = `${insights.length} insight${insights.length !== 1 ? 's' : ''}`;
         
@@ -53,78 +47,34 @@ async function loadAssetData(ticker) {
 function renderHero(container, asset, insight) {
     container.innerHTML = `
         <div class="asset-hero-content" style="background: white; padding: 40px; border: 1.5px solid var(--border); border-radius: var(--radius-lg); display: grid; grid-template-columns: 1fr 280px 380px; gap: 40px; align-items: start;">
-            
             <div class="hero-info">
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
                     <span class="suggestion-ticker" style="font-size: 14px; background: var(--text-primary); color: white; padding: 4px 10px; border-radius: 4px;">${asset.ticker}</span>
-                    <div id="live-asset-badge" style="display:none; font-size:10px; font-weight:800; color:var(--bullish); background:var(--bullish-bg); padding:4px 8px; border-radius:4px; text-transform:uppercase;">
-                        <i class="fas fa-circle-notch fa-spin"></i> In Position
-                    </div>
                 </div>
                 <h1 style="font-family: var(--font-display); font-size: 42px; font-weight: 900; margin: 0 0 16px; color: var(--text-primary); line-height: 1.1;">${asset.name_full}</h1>
-                
                 <div class="mt5-specs-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase;">
-                    
-                    <span class="spec-item" title="Prezzo attuale di mercato (Ask/Last)">
-                        <strong style="color: var(--text-secondary);">Prezzo:</strong> <span id="hero-live-price">--</span> 
-                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
-                    </span>
-
-                    <span class="spec-item" title="Dimensione minima dell'ordine consentita dal broker">
-                        <strong style="color: var(--text-secondary);">Min Lot:</strong> <span id="hero-live-volmin">--</span>
-                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
-                    </span>
-
-                    <span class="spec-item" title="Dimensione massima dell'ordine consentita per singola operazione">
-                        <strong style="color: var(--text-secondary);">Max Lot:</strong> <span id="hero-live-volmax">--</span>
-                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
-                    </span>
-
-                    <span class="spec-item" title="Differenza tra prezzo Bid e Ask in punti">
-                        <strong style="color: var(--text-secondary);">Spread:</strong> <span id="hero-live-spread">--</span>
-                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
-                    </span>
-
-                    <span class="spec-item" title="Valore monetario di un singolo tick (variazione minima) per 1 lotto intero">
-                        <strong style="color: var(--text-secondary);">Tick Val:</strong> <span id="hero-live-tick">--</span>
-                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
-                    </span>
-
-                    <span class="spec-item" title="La variazione minima di prezzo possibile per questo asset">
-                        <strong style="color: var(--text-secondary);">Tick Size:</strong> <span id="hero-live-ticksize">--</span>
-                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
-                    </span>
-
-                    <span class="spec-item" title="Quantità di asset sottostante controllata da 1 lotto (es. 100 per Oro, 100.000 per Forex)">
-                        <strong style="color: var(--text-secondary);">Contract:</strong> <span id="hero-live-contract">--</span>
-                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
-                    </span>
-
-                    <span class="spec-item" title="Interesse pagato o ricevuto per mantenere una posizione Buy aperta durante la notte">
-                        <strong style="color: var(--text-secondary);">Swap L:</strong> <span id="hero-live-swapl">--</span>
-                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
-                    </span>
-
-                    <span class="spec-item" title="Interesse pagato o ricevuto per mantenere una posizione Sell aperta durante la notte">
-                        <strong style="color: var(--text-secondary);">Swap S:</strong> <span id="hero-live-swaps">--</span>
-                        <i class="fas fa-question-circle" style="font-size: 9px; cursor: help;"></i>
-                    </span>
+                    <span class="spec-item"><strong>Prezzo:</strong> <span id="hero-live-price">--</span></span>
+                    <span class="spec-item"><strong>Min Lot:</strong> <span id="hero-live-volmin">--</span></span>
+                    <span class="spec-item"><strong>Max Lot:</strong> <span id="hero-live-volmax">--</span></span>
+                    <span class="spec-item"><strong>Spread:</strong> <span id="hero-live-spread">--</span></span>
+                    <span class="spec-item"><strong>Tick Val:</strong> <span id="hero-live-tick">--</span></span>
+                    <span class="spec-item"><strong>Tick Size:</strong> <span id="hero-live-ticksize">--</span></span>
+                    <span class="spec-item"><strong>Contract:</strong> <span id="hero-live-contract">--</span></span>
+                    <span class="spec-item"><strong>Swap L:</strong> <span id="hero-live-swapl">--</span></span>
+                    <span class="spec-item"><strong>Swap S:</strong> <span id="hero-live-swaps">--</span></span>
                 </div>
             </div>
-
             <div class="sentiment-matrix" style="border-left: 1.5px solid var(--border); padding-left: 30px; display: flex; flex-direction: column; gap: 15px;">
                 <h4 style="font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase;">Market Sentiment</h4>
                 ${renderSentimentRow('Short Term', insight.sentiment_short)}
                 ${renderSentimentRow('Medium Term', insight.sentiment_medium)}
                 ${renderSentimentRow('Long Term', insight.sentiment_long)}
             </div>
-
             <div id="risk-terminal-slot">
                 <div class="state-msg"><div class="spinner"></div></div>
             </div>
         </div>
     `;
-
     loadRiskTerminal(asset);
 }
 
@@ -139,31 +89,14 @@ async function loadRiskTerminal(asset) {
     }
 }
 
-/**
- * LOGICA OPERATIVA DEL TERMINALE
- */
-
-function setRiskMode(mode) {
-    currentRiskMode = mode;
-    document.getElementById('group-risk').style.display = mode === 'auto' ? 'block' : 'none';
-    document.getElementById('group-lots').style.display = mode === 'manual' ? 'block' : 'none';
-    
-    // Toggle classi bottoni
-    document.getElementById('btn-auto').classList.toggle('active-tgl', mode === 'auto');
-    document.getElementById('btn-manual').classList.toggle('active-tgl', mode === 'manual');
-
-    if (window.lastMT5Data) updateAssetCalculations(window.lastMT5Data);
-}
-
 function initTerminalLogic(asset) {
-    const inputs = ['in-risk-pc', 'in-lots', 'in-sl-price', 'in-entry-price'];
+    const inputs = ['in-lots', 'in-sl-price', 'in-entry-price'];
     inputs.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', () => {
             if (window.lastMT5Data) updateAssetCalculations(window.lastMT5Data);
         });
     });
-    
     if (window.lastMT5Data) updateAssetCalculations(window.lastMT5Data);
 }
 
@@ -174,12 +107,11 @@ function updateAssetCalculations(mt5Data) {
 
     if (!asset || !account) return;
 
-    // Aggiornamento etichette live nella Hero
+    // Update Hero Labels
     const updateEl = (id, val) => {
         const el = document.getElementById(id);
         if(el) el.innerText = val;
     };
-
     updateEl('hero-live-price', asset.price);
     updateEl('hero-live-volmin', asset.volume_min);
     updateEl('hero-live-volmax', asset.volume_max || '--');
@@ -190,32 +122,9 @@ function updateAssetCalculations(mt5Data) {
     updateEl('hero-live-swapl', asset.swap_long);
     updateEl('hero-live-swaps', asset.swap_short);
 
-    // Calcolo HEAT (Esposizione totale)
-    let totalOpenRiskCash = 0;
-    trades.forEach(t => {
-        if (t.sl > 0) {
-            const dist = Math.abs(t.price_open - t.sl);
-            const points = dist / (asset.tick_size || 0.01);
-            totalOpenRiskCash += (points * asset.tick_value * t.volume); 
-        }
-    });
-    
-    // Salviamo questo dato nella window per poterlo usare in runRiskMath
-    window.currentOpenRiskCash = totalOpenRiskCash;
-
-    const openRiskPc = (totalOpenRiskCash / account.balance) * 100; // Meglio usare Balance
-    const meter = document.getElementById('exposure-meter');
-    if(meter) {
-        meter.innerText = `HEAT: ${openRiskPc.toFixed(1)}%`;
-        meter.style.color = openRiskPc > 5 ? 'var(--bearish)' : (openRiskPc > 2 ? '#f39c12' : 'var(--bullish)');
-    }
-
     runRiskMath(account, asset);
 }
 
-/**
- * LOGICA MATEMATICA RISK TERMINAL
- */
 function runRiskMath(account, asset) {
     const slPrice = parseFloat(document.getElementById('in-sl-price')?.value) || 0;
     const entryInputEl = document.getElementById('in-entry-price');
@@ -227,7 +136,7 @@ function runRiskMath(account, asset) {
     }
     const entryPrice = parseFloat(entryInputEl?.value) || livePrice || 0;
 
-    // --- Rilevamento Direzione ---
+    // Direzione
     const dirBadge = document.getElementById('trade-direction-badge');
     if (dirBadge) {
         if (slPrice === 0) {
@@ -237,7 +146,7 @@ function runRiskMath(account, asset) {
             dirBadge.innerText = "⬆️ LONG (BUY)";
             dirBadge.style.background = "var(--bullish-bg)";
             dirBadge.style.color = "var(--bullish)";
-        } else if (slPrice > entryPrice) {
+        } else {
             dirBadge.innerText = "⬇️ SHORT (SELL)";
             dirBadge.style.background = "var(--bearish-bg)";
             dirBadge.style.color = "var(--bearish)";
@@ -255,71 +164,37 @@ function runRiskMath(account, asset) {
     const distance = Math.abs(entryPrice - slPrice);
     const points = distance / tickSize;
 
-    let lots, riskPc, riskCash;
-    let isImpossible = false;
+    // Calcolo manuale basato sui lotti
+    let lots = parseFloat(lotsInputEl.value) || 0;
+    if (lots < volMin) { lots = volMin; lotsInputEl.value = volMin; }
+    lots = Math.round(lots / volStep) * volStep;
+    
+    const riskCash = lots * points * tickValue;
+    const riskPc = (riskCash / account.balance) * 100;
 
-    // --- CALCOLO SIZE ---
-    if (currentRiskMode === 'auto') {
-        const requestedRiskPc = parseFloat(document.getElementById('in-risk-pc').value) || 0;
-        const requestedRiskCash = account.balance * (requestedRiskPc / 100);
-
-        lots = requestedRiskCash / (points * tickValue);
-        
-        if (lots < volMin && requestedRiskPc > 0) {
-            isImpossible = true;
-            lots = volMin; 
-        } else {
-            lots = Math.floor(lots / volStep) * volStep;
-        }
-
-        riskCash = lots * points * tickValue;
-        riskPc = (riskCash / account.balance) * 100;
-    } else {
-        lots = parseFloat(lotsInputEl.value) || 0;
-        if (lots < volMin) { lots = volMin; lotsInputEl.value = volMin; }
-        lots = Math.round(lots / volStep) * volStep;
-        riskCash = lots * points * tickValue;
-        riskPc = (riskCash / account.balance) * 100;
-    }
-
-    // --- CALCOLO LEVA REALE (BASATO SOLO SU MT5) ---
-    // Usiamo direttamente il valore margin_calc_1_lot inviato dal Python
-    let effectiveLeva = account.leverage; // Fallback
+    // Leva Real-time
+    let effectiveLeva = account.leverage;
     if (asset.margin_calc_1_lot && asset.margin_calc_1_lot > 0) {
-        // Formula: (Prezzo * Contratto) / Margine per 1 lotto
         effectiveLeva = (entryPrice * contractSize) / asset.margin_calc_1_lot;
     }
 
-    // --- CALCOLO MARGINE REALE ---
-    // Margine totale = Margine per 1 lotto * Lotti inseriti
     const marginReq = (asset.margin_calc_1_lot || 0) * lots;
 
-    // --- AGGIORNAMENTO INTERFACCIA ---
+    // UI
     if(document.getElementById('out-cash')) document.getElementById('out-cash').innerText = `$ ${riskCash.toFixed(2)}`;
     if(document.getElementById('out-lots')) document.getElementById('out-lots').innerText = lots.toFixed(2);
     
-    // Mostra Leva
     const outLeverageEl = document.getElementById('out-leverage');
     if (outLeverageEl) {
         const roundedLeva = Math.round(effectiveLeva);
         outLeverageEl.innerText = roundedLeva <= 1 ? "Leva 1:1 (SPOT)" : `Leva Asset 1:${roundedLeva}`;
-        // Colore arancione se la leva dell'asset è diversa da quella base del conto (1:50)
-        outLeverageEl.style.color = Math.abs(roundedLeva - account.leverage) > 2 ? '#e67e22' : 'var(--text-muted)';
     }
 
-    // Mostra Rischio % con alert se impossibile
     const outRiskResEl = document.getElementById('out-risk-res');
     if (outRiskResEl) {
-        if (isImpossible) {
-            outRiskResEl.innerHTML = `<span style="color:var(--bearish); font-weight:900;">${riskPc.toFixed(2)}%</span><br>
-            <span style="font-size:7px; color:var(--bearish); display:block; line-height:1; margin-top:2px;">⚠️ S.L. TROPPO AMPIO PER 0.01 LOTTI</span>`;
-        } else {
-            outRiskResEl.innerText = `${riskPc.toFixed(2)} %`;
-            outRiskResEl.style.color = 'var(--text-muted)';
-        }
+        outRiskResEl.innerText = `${riskPc.toFixed(2)} %`;
     }
 
-    // Mostra Margini
     const outMarginEl = document.getElementById('out-margin');
     if (outMarginEl) {
         outMarginEl.innerText = `$ ${marginReq.toFixed(2)}`;
@@ -330,7 +205,7 @@ function runRiskMath(account, asset) {
         document.getElementById('out-free-margin').innerText = `$ ${(account.margin_free || 0).toFixed(2)}`;
     }
 
-    // --- SCENARIO PEGGIOR (GLOBAL RISK) ---
+    // Worst Case
     const openTradesWorstCase = window.currentWorstCasePnLCash || 0;
     const totalApocalypsePnL = openTradesWorstCase - riskCash;
     const projectedBalance = account.balance + totalApocalypsePnL;
@@ -344,7 +219,7 @@ function runRiskMath(account, asset) {
     if (document.getElementById('out-projected-balance')) {
         const el = document.getElementById('out-projected-balance');
         el.innerText = `$ ${projectedBalance.toFixed(2)}`;
-        el.style.color = projectedBalance >= account.balance ? 'var(--bullish)' : (projectedBalance < 0 ? 'var(--bearish)' : 'var(--text-primary)');
+        el.style.color = projectedBalance >= account.balance ? 'var(--bullish)' : 'var(--text-primary)';
     }
 
     const totalRiskPcEl = document.getElementById('out-total-risk-pc');
@@ -355,21 +230,6 @@ function runRiskMath(account, asset) {
         } else {
             const riskPcStr = ((Math.abs(totalApocalypsePnL) / account.balance) * 100).toFixed(1);
             totalRiskPcEl.innerText = `RISCHIO TOTALE: ${riskPcStr}%`;
-            totalRiskPcEl.style.color = riskPcStr > 10 ? 'var(--bearish)' : 'var(--text-primary)';
         }
     }
-}
-
-function renderSentimentRow(label, sentiment) {
-    const s = (sentiment || 'UNKNOWN').toUpperCase();
-    let color = 'var(--text-muted)';
-    let bg = 'var(--bg-subtle)';
-    if (s === 'BULLISH') { color = 'var(--bullish)'; bg = 'var(--bullish-bg)'; }
-    if (s === 'BEARISH') { color = 'var(--bearish)'; bg = 'var(--bearish-bg)'; }
-    return `
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">${label}</span>
-            <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: ${color}; background: ${bg}; padding: 4px 12px; border-radius: 4px; min-width: 85px; text-align: center;">${s}</span>
-        </div>
-    `;
 }
