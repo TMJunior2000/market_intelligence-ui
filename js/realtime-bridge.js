@@ -1,74 +1,82 @@
 /**
- * REALTIME-BRIDGE.JS - Versione Live Terminal
+ * REALTIME-BRIDGE.JS - Versione Live Terminal & Asset Hero
+ * Gestisce la ricezione dei dati da Python/MT5 e li smista ai componenti UI
  */
 const realtimeBridge = {
     channel: null,
 
     init: () => {
-            // Verifica che supabase sia inizializzato dal config.js
-            if (!window.supabase || typeof window.supabase.channel !== 'function') {
-                console.error("❌ Errore: Il client Supabase non è pronto per il Realtime.");
-                return;
+        // Verifica inizializzazione Supabase
+        if (!window.supabase || typeof window.supabase.channel !== 'function') {
+            console.error("❌ Errore: Il client Supabase non è pronto per il Realtime.");
+            return;
+        }
+
+        // Creazione del canale broadcast per bassa latenza
+        realtimeBridge.channel = window.supabase.channel('live_trading', {
+            config: { 
+                broadcast: { 
+                    self: false, 
+                    ack: false   
+                } 
             }
+        });
 
-            // Creazione del canale broadcast
-            realtimeBridge.channel = window.supabase.channel('live_trading', {
-                config: { 
-                    broadcast: { 
-                        self: false, // Non ascoltiamo i nostri stessi messaggi
-                        ack: false   // Disabilitiamo gli ack per massimizzare la velocità
-                    } 
-                }
-            });
-
-            realtimeBridge.channel
-                // 1. ASCOLTO PING DA PYTHON
-                .on('broadcast', { event: 'ping' }, () => {
-                    console.log("📡 [Realtime] PING ricevuto da Python. Rispondo PONG...");
-                    
-                    realtimeBridge.channel.send({
-                        type: 'broadcast',
-                        event: 'pong',
-                        payload: { status: 'online', timestamp: new Date().toISOString() }
-                    });
-                })
-
-                // 2. ASCOLTO DATI ACCOUNT E TRADES
-                .on('broadcast', { event: 'account_update' }, (envelope) => {
-                    console.log("📈 [Realtime] Ricevuto aggiornamento MT5");
-                    
-                    // La libreria a volte impacchetta i dati in 'payload', a volte sono diretti
-                    // Questa riga gestisce entrambi i casi per sicurezza
-                    const data = envelope.payload || envelope;
-                    realtimeBridge.renderTerminal(data);
-                })
-
-                // 3. SOTTOSCRIZIONE
-                .subscribe((status) => {
-                    if (status === 'SUBSCRIBED') {
-                        console.log("🌐 [Realtime] Canale 'live_trading' connesso con successo!");
-                    } else {
-                        console.warn(`⚠️ [Realtime] Stato connessione: ${status}`);
-                    }
+        realtimeBridge.channel
+            // 1. ASCOLTO PING (Health Check)
+            .on('broadcast', { event: 'ping' }, () => {
+                realtimeBridge.channel.send({
+                    type: 'broadcast',
+                    event: 'pong',
+                    payload: { status: 'online', timestamp: new Date().toISOString() }
                 });
-        },
+            })
 
+            // 2. ASCOLTO DATI ACCOUNT E TRADES (Main Update)
+            .on('broadcast', { event: 'account_update' }, (envelope) => {
+                const data = envelope.payload || envelope;
+                
+                // Salvataggio globale dell'ultimo pacchetto per il ricalcolo istantaneo degli input
+                window.lastMT5Data = data;
+                
+                // Aggiorna la sidebar operativa (sempre visibile)
+                realtimeBridge.renderTerminal(data);
+                
+                // Aggiorna la Hero Asset se la vista è attiva
+                realtimeBridge.syncAssetHero(data);
+            })
+
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') console.log("🌐 [Realtime] Canale 'live_trading' attivo!");
+            });
+    },
+
+    /**
+     * Aggiorna i componenti della Sidebar Operativa
+     */
     renderTerminal: (data) => {
         const { account, trades } = data;
 
         // 1. Aggiornamento Account Stats
-        document.getElementById('equity-val').innerText = `$${account.equity.toFixed(2)}`;
-        document.getElementById('balance-val').innerText = `$${account.balance.toFixed(2)}`;
-        document.getElementById('margin-level-val').innerText = `${Math.round(account.margin_level)}%`;
+        const equityEl = document.getElementById('equity-val');
+        const balanceEl = document.getElementById('balance-val');
+        const marginEl = document.getElementById('margin-level-val');
+        const profitTotalEl = document.getElementById('profit-val');
+
+        if (equityEl) equityEl.innerText = `$${account.equity.toFixed(2)}`;
+        if (balanceEl) balanceEl.innerText = `$${account.balance.toFixed(2)}`;
+        if (marginEl) marginEl.innerText = `${Math.round(account.margin_level)}%`;
         
-        const profitEl = document.getElementById('profit-val');
-        profitEl.innerText = `${account.profit >= 0 ? '+' : ''}$${account.profit.toFixed(2)}`;
-        profitEl.style.color = account.profit >= 0 ? 'var(--bullish)' : 'var(--bearish)';
+        if (profitTotalEl) {
+            profitTotalEl.innerText = `${account.profit >= 0 ? '+' : ''}$${account.profit.toFixed(2)}`;
+            profitTotalEl.style.color = account.profit >= 0 ? 'var(--bullish)' : 'var(--bearish)';
+        }
 
-        // 2. Aggiornamento Contatore Posizioni
-        document.getElementById('trades-count').innerText = `${trades.length} POS`;
+        // 2. Contatore Posizioni
+        const countEl = document.getElementById('trades-count');
+        if (countEl) countEl.innerText = `${trades.length} POS`;
 
-        // 3. Rendering Lista Operazioni
+        // 3. Rendering Lista Operazioni (Sidebar)
         const grid = document.getElementById('open-trades-grid');
         if (!grid) return;
 
@@ -81,7 +89,7 @@ const realtimeBridge = {
             <div class="trade-row data-flash">
                 <div class="trade-info-main">
                     <span class="trade-symbol">
-                        <span class="trade-badge ${t.type === 'BUY' ? 'badge-buy' : 'badge-sell'}">${t.type}</span>
+                        <span class="trade-badge ${t.type.includes('BUY') ? 'badge-buy' : 'badge-sell'}">${t.type}</span>
                         ${t.symbol}
                     </span>
                     <span class="trade-details">Vol: ${t.volume} @ ${t.price_open}</span>
@@ -91,7 +99,22 @@ const realtimeBridge = {
                 </div>
             </div>
         `).join('');
+    },
+
+    /**
+     * Smista i dati alla vista Asset specifica (Hero + Risk Terminal)
+     */
+    syncAssetHero: (data) => {
+        const assetView = document.getElementById('asset-view');
+        
+        // Verifichiamo che la vista asset sia visibile e che la funzione di asset.js sia caricata
+        if (assetView && assetView.style.display !== 'none') {
+            if (typeof updateAssetCalculations === 'function') {
+                updateAssetCalculations(data);
+            }
+        }
     }
 };
 
+// Inizializzazione al caricamento dei componenti
 document.addEventListener('componentsReady', () => realtimeBridge.init());

@@ -1,7 +1,10 @@
 /**
- * ASSET.JS - Versione SPA
- * Rendering dei dati tecnici e del sentiment matrix
+ * ASSET.JS - Versione SPA Operativa
+ * Rendering dei dati tecnici, sentiment e Risk Terminal
  */
+
+// Stato globale del terminale nella pagina
+let currentRiskMode = 'auto'; 
 
 async function loadAssetData(ticker) {
     const grid = document.getElementById('asset-feed-grid');
@@ -29,7 +32,7 @@ async function loadAssetData(ticker) {
         const asset = insights[0].assets;
         const lastInsight = insights[0]; 
 
-        // 1. Render Hero (Dati tecnici FP Markets + Sentiment Matrix)
+        // 1. Render Hero base (Identità + Sentiment Matrix)
         renderHero(hero, asset, lastInsight);
 
         // 2. Render Grid Storica
@@ -37,7 +40,7 @@ async function loadAssetData(ticker) {
         document.getElementById('asset-count').textContent = `${insights.length} insight${insights.length !== 1 ? 's' : ''}`;
         
         insights.forEach((insight, i) => {
-            const card = buildCard(insight, i); // Funzione in ui-utils.js
+            const card = buildCard(insight, i); 
             grid.appendChild(card);
         });
 
@@ -46,8 +49,6 @@ async function loadAssetData(ticker) {
         grid.innerHTML = `<div class="state-msg">Errore nel caricamento dei dati.</div>`;
     }
 }
-
-let currentRiskMode = 'auto'; // 'auto' o 'manual'
 
 function renderHero(container, asset, insight) {
     container.innerHTML = `
@@ -83,7 +84,6 @@ function renderHero(container, asset, insight) {
         </div>
     `;
 
-    // Carichiamo il terminale operativo dal file componenti
     loadRiskTerminal(asset);
 }
 
@@ -98,37 +98,94 @@ async function loadRiskTerminal(asset) {
     }
 }
 
-// Funzione di calcolo che verrà richiamata dal realtime-bridge
+/**
+ * LOGICA OPERATIVA DEL TERMINALE
+ */
+
+function setRiskMode(mode) {
+    currentRiskMode = mode;
+    document.getElementById('group-risk').style.display = mode === 'auto' ? 'block' : 'none';
+    document.getElementById('group-lots').style.display = mode === 'manual' ? 'block' : 'none';
+    
+    // Toggle classi bottoni
+    document.getElementById('btn-auto').classList.toggle('active-tgl', mode === 'auto');
+    document.getElementById('btn-manual').classList.toggle('active-tgl', mode === 'manual');
+
+    if (window.lastMT5Data) updateAssetCalculations(window.lastMT5Data);
+}
+
+function initTerminalLogic(asset) {
+    const inputs = ['in-risk-pc', 'in-lots', 'in-sl-pips'];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', () => {
+            if (window.lastMT5Data) updateAssetCalculations(window.lastMT5Data);
+        });
+    });
+    
+    if (window.lastMT5Data) updateAssetCalculations(window.lastMT5Data);
+}
+
 function updateAssetCalculations(mt5Data) {
     const asset = mt5Data.current_asset;
     const account = mt5Data.account;
     const trades = mt5Data.trades;
 
+    if (!asset || !account) return;
+
     // 1. Aggiorna Info Live nella Hero
-    document.getElementById('hero-live-spread').innerText = asset.spread;
-    document.getElementById('hero-live-tick').innerText = asset.tick_value.toFixed(2);
-    document.getElementById('hero-live-swapl').innerText = asset.swap_long;
-    document.getElementById('hero-live-swaps').innerText = asset.swap_short;
+    if(document.getElementById('hero-live-spread')) document.getElementById('hero-live-spread').innerText = asset.spread;
+    if(document.getElementById('hero-live-tick')) document.getElementById('hero-live-tick').innerText = asset.tick_value.toFixed(2);
+    if(document.getElementById('hero-live-swapl')) document.getElementById('hero-live-swapl').innerText = asset.swap_long;
+    if(document.getElementById('hero-live-swaps')) document.getElementById('hero-live-swaps').innerText = asset.swap_short;
 
     // 2. Calcolo Termometro Esposizione (Open Risk)
     let totalOpenRiskCash = 0;
     trades.forEach(t => {
         if (t.sl > 0) {
             const dist = Math.abs(t.price_open - t.sl);
-            const points = dist / asset.tick_size;
-            totalOpenRiskCash += (points * t.tick_value * (t.volume / 0.1)); 
+            const points = dist / (asset.tick_size || 0.01);
+            totalOpenRiskCash += (points * asset.tick_value * (t.volume / 0.1)); 
         }
     });
     const openRiskPc = (totalOpenRiskCash / account.equity) * 100;
     
     const meter = document.getElementById('exposure-meter');
     if(meter) {
-        meter.innerText = `PORTFOLIO HEAT: ${openRiskPc.toFixed(1)}%`;
+        meter.innerText = `HEAT: ${openRiskPc.toFixed(1)}%`;
         meter.style.color = openRiskPc > 5 ? 'var(--bearish)' : (openRiskPc > 2 ? '#f39c12' : 'var(--bullish)');
     }
 
-    // 3. Esegui Calcolo Risk Terminal (Derivato o Diretto)
+    // 3. Esegui Calcolo Risk Terminal
     runRiskMath(account, asset);
+}
+
+function runRiskMath(account, asset) {
+    const slPips = parseFloat(document.getElementById('in-sl-pips')?.value) || 0;
+    const tickValue = asset.tick_value || 10; 
+    
+    let lots, riskPc, riskCash;
+
+    if (currentRiskMode === 'auto') {
+        riskPc = parseFloat(document.getElementById('in-risk-pc').value) || 0;
+        riskCash = (account.equity * (riskPc / 100));
+        lots = riskCash / (slPips * (tickValue * 10));
+        lots = Math.floor(lots / 0.01) * 0.01;
+    } else {
+        lots = parseFloat(document.getElementById('in-lots').value) || 0;
+        riskCash = lots * slPips * (tickValue * 10);
+        riskPc = (riskCash / account.equity) * 100;
+    }
+
+    // Update UI Terminale
+    if(document.getElementById('out-cash')) document.getElementById('out-cash').innerText = `$ ${riskCash.toFixed(2)}`;
+    if(document.getElementById('out-risk-res')) document.getElementById('out-risk-res').innerText = `${riskPc.toFixed(2)} %`;
+    if(document.getElementById('out-lots')) document.getElementById('out-lots').innerText = lots.toFixed(2);
+    
+    const leverage = account.leverage || 30;
+    if(document.getElementById('out-leverage')) document.getElementById('out-leverage').innerText = `Leva 1:${((lots * 100000) / account.equity).toFixed(1)}`;
+    if(document.getElementById('out-margin')) document.getElementById('out-margin').innerText = `$ ${((lots * 100000) / leverage).toFixed(2)}`;
+    if(document.getElementById('out-free-margin')) document.getElementById('out-free-margin').innerText = `$ ${(account.margin_free || 0).toFixed(2)}`;
 }
 
 function renderSentimentRow(label, sentiment) {
