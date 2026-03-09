@@ -26,14 +26,16 @@ const realtimeBridge = {
             // 1. ASCOLTO PING (Health Check)
             .on('broadcast', { event: 'ping' }, () => {
                 const urlParams = new URLSearchParams(window.location.search);
-                const ticker = urlParams.get('ticker'); // Niente fallback qui!
+                const ticker = urlParams.get('ticker'); 
+
+                console.log("PING ricevuto. Ticker rilevato:", ticker || "DASHBOARD");
 
                 realtimeBridge.channel.send({
                     type: 'broadcast',
                     event: 'pong',
                     payload: { 
                         status: 'online', 
-                        // Se ticker è null, inviamo "DASHBOARD"
+                        // Se ticker è null (sei in home), invia DASHBOARD
                         active_asset: ticker ? ticker : "DASHBOARD" 
                     }
                 });
