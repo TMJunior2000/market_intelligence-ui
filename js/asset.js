@@ -163,88 +163,88 @@ function updateAssetCalculations(mt5Data) {
 function runRiskMath(account, asset) {
     const slPrice = parseFloat(document.getElementById('in-sl-price')?.value) || 0;
     
-    // Dati live dal backend Python
+    // Variabili MT5 in tempo reale
     const currentPrice = asset.price || 0;
     const tickValue = asset.tick_value || 0;
     const tickSize = asset.tick_size || 0.00001;
     const volMin = asset.volume_min || 0.01;
     const volStep = asset.volume_step || 0.01;
-    const accLeverage = account.leverage || 30;
     const contractSize = asset.contract_size || 100000;
+    const accLeverage = account.leverage || 30;
 
-    // Se l'utente non ha ancora inserito un prezzo valido, blocchiamo calcoli assurdi
+    // Se non c'è prezzo o non è inserito lo Stop Loss, azzera tutto
     if (currentPrice === 0 || slPrice === 0) return;
 
-    // 1. Calcolo Distanza: (Prezzo Attuale - Stop Loss) / Tick Size = Punti reali
+    // 1. Calcolo reale della distanza in Ticks/Punti
     const distance = Math.abs(currentPrice - slPrice);
     const points = distance / tickSize;
 
     let lots, riskPc, riskCash;
 
+    // --- MODALITÀ AUTO ---
     if (currentRiskMode === 'auto') {
         riskPc = parseFloat(document.getElementById('in-risk-pc').value) || 0;
-        riskCash = (account.equity * (riskPc / 100));
+        riskCash = account.equity * (riskPc / 100);
 
-        // Calcolo Lotti base: Rischio / (Punti * Valore di 1 Punto)
+        // Calcolo Lotti (ValoreUniversale MT5)
         lots = riskCash / (points * tickValue);
 
-        // Arrotondamento obbligatorio in base allo step del broker (es. 0.01 o 0.1)
+        // Normalizzazione MT5: Arrotonda allo step corretto (es. 0.01)
         lots = Math.floor(lots / volStep) * volStep;
 
-        // CONTROLLO SIZE MINIMA: Se il calcolo dà meno del minimo consentito
+        // Sicurezza: Non può essere inferiore al volume minimo del broker
         if (lots < volMin) {
             lots = volMin;
-            // Ricalcoliamo il rischio reale sforato
-            riskCash = lots * points * tickValue;
-            riskPc = (riskCash / account.equity) * 100;
         }
+
+        // Ricalcola il rischio REALE con i lotti arrotondati/minimi
+        riskCash = lots * points * tickValue;
+        riskPc = (riskCash / account.equity) * 100;
+
+    // --- MODALITÀ MANUAL ---
     } else {
-        // Modalità MANUALE
         lots = parseFloat(document.getElementById('in-lots').value) || 0;
         
-        // Protezione: non può esistere una size manuale sotto il minimo
+        // Sicurezza manuale
         if (lots < volMin) lots = volMin;
-        lots = Math.round(lots / volStep) * volStep; // Normalizza eventuali errori di battitura
+        lots = Math.round(lots / volStep) * volStep;
 
         riskCash = lots * points * tickValue;
         riskPc = (riskCash / account.equity) * 100;
     }
 
-    // --- AGGIORNAMENTO UI RISCHIO ---
+    // --- AGGIORNAMENTO UI VALORI BASE ---
     if(document.getElementById('out-cash')) document.getElementById('out-cash').innerText = `$ ${riskCash.toFixed(2)}`;
     if(document.getElementById('out-risk-res')) document.getElementById('out-risk-res').innerText = `${riskPc.toFixed(2)} %`;
     if(document.getElementById('out-lots')) document.getElementById('out-lots').innerText = lots.toFixed(2);
     if(document.getElementById('out-free-margin')) document.getElementById('out-free-margin').innerText = `$ ${(account.margin_free || 0).toFixed(2)}`;
 
-    // --- PROVA DEL NOVE: LEVA E MARGINE (IL SALVAVITA) ---
-    // Valore Nominale (Controvalore reale mosso sul mercato)
+    // --- PROVA DEL NOVE: LEVA E MARGINE CON ALLARME ROSSO ---
+    // Il valore nominale mosso a mercato (es. 0.10 lotti d'oro a 2100$ = 21.000$)
     const notionalValue = lots * contractSize * currentPrice;
     
-    // Margine richiesto dal broker per aprire la posizione
     const marginReq = notionalValue / accLeverage;
-    
-    // Leva Effettiva Reale sul conto
     const effectiveLeverage = notionalValue / account.equity;
 
-    // 1. Stampa Leva e colora di ROSSO se supera la Leva Max del conto
     const outLeverageEl = document.getElementById('out-leverage');
+    const outMarginEl = document.getElementById('out-margin');
+
     if (outLeverageEl) {
         outLeverageEl.innerText = `Leva 1:${effectiveLeverage.toFixed(1)}`;
+        // Diventa rosso se la leva effettiva supera quella massima del conto
         outLeverageEl.style.color = effectiveLeverage > accLeverage ? 'var(--bearish)' : 'var(--text-muted)';
     }
 
-    // 2. Stampa Margine e colora di ROSSO se non hai abbastanza fondi
-    const outMarginEl = document.getElementById('out-margin');
     if (outMarginEl) {
         outMarginEl.innerText = `$ ${marginReq.toFixed(2)}`;
         
-        // CONTROLLO SALVAVITA: Il margine richiesto supera quello libero?
+        // ALLARME SALVAVITA: Il margine richiesto supera quello libero?
         if (marginReq > account.margin_free) {
-            outMarginEl.style.color = 'var(--bearish)'; // Diventa Rosso Fuoco
+            outMarginEl.style.color = 'var(--bearish)'; // Rosso errore
             outMarginEl.style.fontWeight = '900';
-            // Opzionale: puoi aggiungere un testo "(INSUFFICIENTE)"
+            outMarginEl.innerText = `$ ${marginReq.toFixed(2)} (⚠️ INS.)`;
         } else {
-            outMarginEl.style.color = 'inherit'; // Torna normale
+            outMarginEl.style.color = 'inherit';
             outMarginEl.style.fontWeight = '700';
         }
     }
