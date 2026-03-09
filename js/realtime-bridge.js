@@ -25,10 +25,17 @@ const realtimeBridge = {
         realtimeBridge.channel
             // 1. ASCOLTO PING (Health Check)
             .on('broadcast', { event: 'ping' }, () => {
+                // Prendiamo il ticker dall'URL corrente
+                const urlParams = new URLSearchParams(window.location.search);
+                const ticker = urlParams.get('ticker') || "EURUSD";
+
                 realtimeBridge.channel.send({
                     type: 'broadcast',
                     event: 'pong',
-                    payload: { status: 'online', timestamp: new Date().toISOString() }
+                    payload: { 
+                        status: 'online', 
+                        active_asset: ticker // <--- Python userà questo per fare mt5.symbol_info(ticker)
+                    }
                 });
             })
 
