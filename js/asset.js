@@ -227,13 +227,12 @@ function runRiskMath(account, asset) {
     }
     const entryPrice = parseFloat(entryInputEl?.value) || livePrice || 0;
 
-    // --- NUOVO: Rilevamento Direzione (BUY/SELL) ---
+    // --- Rilevamento Direzione ---
     const dirBadge = document.getElementById('trade-direction-badge');
     if (dirBadge) {
         if (slPrice === 0) {
             dirBadge.innerText = "INSERISCI S.L. PER DIREZIONE";
             dirBadge.style.background = "var(--bg-subtle)";
-            dirBadge.style.color = "var(--text-muted)";
         } else if (slPrice < entryPrice) {
             dirBadge.innerText = "⬆️ LONG (BUY)";
             dirBadge.style.background = "var(--bullish-bg)";
@@ -258,97 +257,80 @@ function runRiskMath(account, asset) {
     const points = distance / tickSize;
 
     let lots, riskPc, riskCash;
+    let isImpossible = false;
 
     if (currentRiskMode === 'auto') {
-        riskPc = parseFloat(document.getElementById('in-risk-pc').value) || 0;
-        riskCash = account.balance * (riskPc / 100); // Uso Balance invece di Equity per stabilità
+        const requestedRiskPc = parseFloat(document.getElementById('in-risk-pc').value) || 0;
+        const requestedRiskCash = account.balance * (requestedRiskPc / 100);
 
-        lots = riskCash / (points * tickValue);
-        lots = Math.floor(lots / volStep) * volStep;
-        if (lots < volMin) lots = volMin;
+        // Calcolo teorico lotti
+        lots = requestedRiskCash / (points * tickValue);
+        
+        // Verifica se i lotti teorici sono sotto il minimo del broker
+        if (lots < volMin && requestedRiskPc > 0) {
+            isImpossible = true;
+            lots = volMin; // Forziamo al minimo per mostrare il rischio reale
+        } else {
+            lots = Math.floor(lots / volStep) * volStep;
+        }
 
         riskCash = lots * points * tickValue;
         riskPc = (riskCash / account.balance) * 100;
     } else {
         lots = parseFloat(lotsInputEl.value) || 0;
-        if (lots < volMin) {
-            lots = volMin;
-            lotsInputEl.value = volMin;
-        }
+        if (lots < volMin) { lots = volMin; lotsInputEl.value = volMin; }
         lots = Math.round(lots / volStep) * volStep;
-
         riskCash = lots * points * tickValue;
         riskPc = (riskCash / account.balance) * 100;
     }
 
+    // --- LOGICA DI BLOCCO E WARNING ---
+    const outRiskResEl = document.getElementById('out-risk-res');
+    if (outRiskResEl) {
+        if (isImpossible) {
+            outRiskResEl.innerHTML = `<span style="color:var(--bearish); font-weight:900;">${riskPc.toFixed(2)}%</span><br>
+            <span style="font-size:7px; color:var(--bearish); display:block; line-height:1; margin-top:2px;">⚠️ S.L. TROPPO AMPIO PER 0.01 LOTTI</span>`;
+            document.getElementById('out-cash').style.color = 'var(--bearish)';
+        } else {
+            outRiskResEl.innerText = `${riskPc.toFixed(2)} %`;
+            outRiskResEl.style.color = 'var(--text-muted)';
+            document.getElementById('out-cash').style.color = 'var(--bearish)';
+        }
+    }
+
+    // Calcolo Leva e Margine (Cap a 1:50)
     let finalLeverage = accLeverage; 
     if (asset.margin_calc_1_lot && asset.margin_calc_1_lot > 0) {
         const theoreticalAssetLeva = (entryPrice * contractSize) / asset.margin_calc_1_lot;
         finalLeverage = Math.min(theoreticalAssetLeva, accLeverage);
     }
 
-    // --- AGGIORNAMENTO INTERFACCIA (Singolo Trade) ---
+    const marginReq = (lots * contractSize * entryPrice) / finalLeverage;
+    
+    // Aggiornamento UI
     if(document.getElementById('out-cash')) document.getElementById('out-cash').innerText = `$ ${riskCash.toFixed(2)}`;
-    if(document.getElementById('out-risk-res')) document.getElementById('out-risk-res').innerText = `${riskPc.toFixed(2)} %`;
     if(document.getElementById('out-lots')) document.getElementById('out-lots').innerText = lots.toFixed(2);
     
-    const outLeverageEl = document.getElementById('out-leverage');
-    if (outLeverageEl) {
-        const roundedLeva = Math.round(finalLeverage);
-        outLeverageEl.innerText = roundedLeva <= 1 ? "Leva 1:1 (SPOT)" : `Leva Applicata 1:${roundedLeva}`;
-        outLeverageEl.style.color = finalLeverage < accLeverage ? '#e67e22' : 'var(--text-muted)';
-    }
-
-    const notionalValue = lots * contractSize * entryPrice;
-    const marginReq = notionalValue / finalLeverage;
-
     const outMarginEl = document.getElementById('out-margin');
     if (outMarginEl) {
         outMarginEl.innerText = `$ ${marginReq.toFixed(2)}`;
-        if (marginReq > (account.margin_free || 0)) {
-            outMarginEl.style.color = 'var(--bearish)';
-            outMarginEl.innerText += " (⚠️ INS.)";
-        } else {
-            outMarginEl.style.color = 'inherit';
-        }
-    }
-    if(document.getElementById('out-free-margin')) {
-        document.getElementById('out-free-margin').innerText = `$ ${(account.margin_free || 0).toFixed(2)}`;
+        outMarginEl.style.color = marginReq > (account.margin_free || 0) ? 'var(--bearish)' : 'inherit';
     }
 
-    // --- NUOVO: SCENARIO PEGGIOR (GLOBAL RISK) ---
-    const openTradesWorstCase = window.currentWorstCasePnLCash || 0; // Può essere + o -
-    
-    // Saldo Proiettato = Saldo attuale + Profitti/Perdite latenti agli SL - Rischio del nuovo trade
+    // Scenario Peggiore (Global Risk)
+    const openTradesWorstCase = window.currentWorstCasePnLCash || 0;
     const totalApocalypsePnL = openTradesWorstCase - riskCash;
     const projectedBalance = account.balance + totalApocalypsePnL;
 
-    // Aggiornamento Valori UI
     if (document.getElementById('out-open-risk')) {
         const el = document.getElementById('out-open-risk');
         el.innerText = openTradesWorstCase >= 0 ? `+$ ${openTradesWorstCase.toFixed(2)}` : `-$ ${Math.abs(openTradesWorstCase).toFixed(2)}`;
         el.style.color = openTradesWorstCase >= 0 ? 'var(--bullish)' : 'var(--bearish)';
     }
-    
-    if (document.getElementById('out-new-risk')) document.getElementById('out-new-risk').innerText = `-$ ${riskCash.toFixed(2)}`;
-    
     if (document.getElementById('out-projected-balance')) {
         const el = document.getElementById('out-projected-balance');
         el.innerText = `$ ${projectedBalance.toFixed(2)}`;
-        // Se il saldo proiettato è MAGGIORE di quello attuale, coloralo di verde!
-        el.style.color = projectedBalance >= account.balance ? 'var(--bullish)' : 'var(--text-primary)';
-    }
-    
-    const totalRiskPcEl = document.getElementById('out-total-risk-pc');
-    if (totalRiskPcEl) {
-        if (totalApocalypsePnL >= 0) {
-            totalRiskPcEl.innerText = `PROFITTO GARANTITO: +$ ${totalApocalypsePnL.toFixed(2)}`;
-            totalRiskPcEl.style.color = 'var(--bullish)';
-        } else {
-            const riskPcStr = ((Math.abs(totalApocalypsePnL) / account.balance) * 100).toFixed(1);
-            totalRiskPcEl.innerText = `RISCHIO TOTALE: ${riskPcStr}%`;
-            totalRiskPcEl.style.color = riskPcStr > 10 ? 'var(--bearish)' : 'var(--text-primary)';
-        }
+        el.style.color = projectedBalance >= account.balance ? 'var(--bullish)' : (projectedBalance < 0 ? 'var(--bearish)' : 'var(--text-primary)');
     }
 }
 
