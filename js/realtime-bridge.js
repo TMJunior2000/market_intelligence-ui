@@ -29,6 +29,8 @@ const realtimeBridge = {
                 const urlParams = new URLSearchParams(window.location.search);
                 const ticker = urlParams.get('ticker') || "EURUSD";
 
+                console.log("Rispondo al PING per l'asset:", ticker);
+
                 realtimeBridge.channel.send({
                     type: 'broadcast',
                     event: 'pong',
