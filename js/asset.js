@@ -217,32 +217,34 @@ function updateAssetCalculations(mt5Data) {
     runRiskMath(account, asset);
 }
 
+/**
+ * LOGICA OPERATIVA DEL TERMINALE - VERSIONE DEFINITIVA
+ */
+
 function runRiskMath(account, asset) {
     const slPrice = parseFloat(document.getElementById('in-sl-price')?.value) || 0;
     const entryInputEl = document.getElementById('in-entry-price');
+    const lotsInputEl = document.getElementById('in-lots');
     
-    // Variabili MT5 e controllo prezzo live
+    // 1. SINCRONIZZAZIONE PREZZI
     const livePrice = asset.price || 0;
-    
-    // Auto-popolamento: Se l'input è vuoto e abbiamo il prezzo da MT5, scrivilo nel campo
     if (entryInputEl && !entryInputEl.value && livePrice > 0) {
         entryInputEl.value = livePrice;
     }
-    
-    // Il prezzo di ingresso per i calcoli è ora quello scritto nel box (limiti o mercato)
     const entryPrice = parseFloat(entryInputEl?.value) || livePrice || 0;
 
+    // 2. RECUPERO PARAMETRI MT5
     const tickValue = asset.tick_value || 0;
     const tickSize = asset.tick_size || 0.00001;
     const volMin = asset.volume_min || 0.01;
     const volStep = asset.volume_step || 0.01;
-    const contractSize = asset.contract_size || 100000;
+    const contractSize = asset.contract_size || 1;
     const accLeverage = account.leverage || 30;
 
-    // Se manca l'ingresso o lo Stop Loss, non calcolare
+    // Se mancano dati critici, esci
     if (entryPrice === 0 || slPrice === 0) return;
 
-    // 1. Calcolo reale della distanza in Ticks/Punti tra ENTRY e SL
+    // 3. CALCOLO DISTANZA
     const distance = Math.abs(entryPrice - slPrice);
     const points = distance / tickSize;
 
@@ -254,64 +256,70 @@ function runRiskMath(account, asset) {
         riskCash = account.equity * (riskPc / 100);
 
         lots = riskCash / (points * tickValue);
+        
+        // Validazione: Non meno del MIN LOT e arrotondamento allo STEP
         lots = Math.floor(lots / volStep) * volStep;
-
-        if (lots < volMin) {
-            lots = volMin;
-        }
+        if (lots < volMin) lots = volMin;
 
         riskCash = lots * points * tickValue;
         riskPc = (riskCash / account.equity) * 100;
 
     // --- MODALITÀ MANUAL ---
     } else {
-        lots = parseFloat(document.getElementById('in-lots').value) || 0;
+        lots = parseFloat(lotsInputEl.value) || 0;
         
-        if (lots < volMin) lots = volMin;
+        // Validazione Cruciale: Forza il Minimo se l'utente inserisce 0.1 dove il min è 1
+        if (lots < volMin) {
+            lots = volMin;
+            lotsInputEl.value = volMin; // Aggiorna visivamente il campo
+        }
         lots = Math.round(lots / volStep) * volStep;
 
         riskCash = lots * points * tickValue;
         riskPc = (riskCash / account.equity) * 100;
     }
 
-    // --- CALCOLO LEVA REALE DELL'ASSET ---
-    // Dedotta dai parametri del broker: (Prezzo * Contratto) / Margine Iniziale
+    // --- 4. CALCOLO LEVA REALE DELL'ASSET ---
+    // La leva dell'asset è: (Valore di Mercato per 1 lotto) / (Margine richiesto per 1 lotto)
     let assetLeverage = accLeverage;
     if (asset.margin_initial && asset.margin_initial > 0) {
+        // Se il broker specifica un margine fisso (es. 0.54 per JD), calcoliamo la leva derivata
         assetLeverage = Math.round((entryPrice * contractSize) / asset.margin_initial);
     }
 
-    // --- AGGIORNAMENTO UI VALORI BASE ---
+    // --- 5. AGGIORNAMENTO UI ---
+    // Money at Risk
     if(document.getElementById('out-cash')) document.getElementById('out-cash').innerText = `$ ${riskCash.toFixed(2)}`;
     if(document.getElementById('out-risk-res')) document.getElementById('out-risk-res').innerText = `${riskPc.toFixed(2)} %`;
+    
+    // Size e Leva Asset
     if(document.getElementById('out-lots')) document.getElementById('out-lots').innerText = lots.toFixed(2);
-    if(document.getElementById('out-free-margin')) document.getElementById('out-free-margin').innerText = `$ ${(account.margin_free || 0).toFixed(2)}`;
-
-    // --- PROVA DEL NOVE: MARGINE REALE ---
-    const notionalValue = lots * contractSize * entryPrice;
-    const marginReq = notionalValue / assetLeverage;
-
     const outLeverageEl = document.getElementById('out-leverage');
-    const outMarginEl = document.getElementById('out-margin');
-
     if (outLeverageEl) {
         outLeverageEl.innerText = `Leva Asset 1:${assetLeverage}`;
-        // Arancione se la leva dell'asset è più restrittiva di quella del conto
+        // Colore arancione se la leva è più restrittiva di quella del conto
         outLeverageEl.style.color = assetLeverage < accLeverage ? '#e67e22' : 'var(--text-muted)';
     }
 
+    // Margini
+    const notionalValue = lots * contractSize * entryPrice;
+    const marginReq = notionalValue / assetLeverage;
+
+    const outMarginEl = document.getElementById('out-margin');
     if (outMarginEl) {
         outMarginEl.innerText = `$ ${marginReq.toFixed(2)}`;
-        
-        // Verifica disponibilità reale
-        if (marginReq > account.margin_free) {
+        if (marginReq > (account.margin_free || 0)) {
             outMarginEl.style.color = 'var(--bearish)';
             outMarginEl.style.fontWeight = '900';
-            outMarginEl.innerText = `$ ${marginReq.toFixed(2)} (⚠️ INS.)`;
+            outMarginEl.innerText += " (⚠️ INS.)";
         } else {
             outMarginEl.style.color = 'inherit';
             outMarginEl.style.fontWeight = '700';
         }
+    }
+
+    if(document.getElementById('out-free-margin')) {
+        document.getElementById('out-free-margin').innerText = `$ ${(account.margin_free || 0).toFixed(2)}`;
     }
 }
 
