@@ -16,7 +16,7 @@ async function loadAllFeeds() {
         .from('market_insights')
         .select(`*, content_feed(*, sources(*)), assets(asset_group)`)
         .order('id', { ascending: false })
-        .limit(100);
+        .limit(1000);
 
     if (error) return console.error(error);
 
