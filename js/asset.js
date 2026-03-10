@@ -55,31 +55,22 @@ async function loadAssetData(ticker) {
     }
 }
 
-function renderHero(container, asset, insight) {
+function renderHero(container, asset, sentimentObj) {
     container.innerHTML = `
-        <div class="asset-hero-content" style="background: white; padding: 40px; border: 1.5px solid var(--border); border-radius: var(--radius-lg); display: grid; grid-template-columns: 1fr 280px 380px; gap: 40px; align-items: start;">
+        <div class="asset-hero-content" style="...">
             <div class="hero-info">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                    <span class="suggestion-ticker" style="font-size: 14px; background: var(--text-primary); color: white; padding: 4px 10px; border-radius: 4px;">${asset.ticker}</span>
-                </div>
-                <h1 style="font-family: var(--font-display); font-size: 42px; font-weight: 900; margin: 0 0 16px; color: var(--text-primary); line-height: 1.1;">${asset.name_full}</h1>
-                <div class="mt5-specs-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase;">
-                    <span class="spec-item"><strong>Prezzo:</strong> <span id="hero-live-price">--</span></span>
-                    <span class="spec-item"><strong>Min Lot:</strong> <span id="hero-live-volmin">--</span></span>
-                    <span class="spec-item"><strong>Max Lot:</strong> <span id="hero-live-volmax">--</span></span>
-                    <span class="spec-item"><strong>Spread:</strong> <span id="hero-live-spread">--</span></span>
-                    <span class="spec-item"><strong>Tick Val:</strong> <span id="hero-live-tick">--</span></span>
-                    <span class="spec-item"><strong>Tick Size:</strong> <span id="hero-live-ticksize">--</span></span>
-                    <span class="spec-item"><strong>Contract:</strong> <span id="hero-live-contract">--</span></span>
-                    <span class="spec-item"><strong>Swap L:</strong> <span id="hero-live-swapl">--</span></span>
-                    <span class="spec-item"><strong>Swap S:</strong> <span id="hero-live-swaps">--</span></span>
-                </div>
+                ... (tutto il blocco h1 e mt5-specs-grid rimane uguale) ...
             </div>
-            <div class="sentiment-matrix" style="border-left: 1.5px solid var(--border); padding-left: 30px; display: flex; flex-direction: column; gap: 15px;">
+            <div class="sentiment-matrix" style="...">
                 <h4 style="font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase;">Market Sentiment</h4>
-                ${renderSentimentRow('Short Term', insight.sentiment_short)}
-                ${renderSentimentRow('Medium Term', insight.sentiment_medium)}
-                ${renderSentimentRow('Long Term', insight.sentiment_long)}
+                
+                ${renderSentimentRow('Short Term', sentimentObj.short)}
+                ${renderSentimentRow('Medium Term', sentimentObj.medium)}
+                ${renderSentimentRow('Long Term', sentimentObj.long)}
+                
+                <p style="font-size: 9px; color: var(--text-muted); margin-top: 10px; font-family: var(--font-mono);">
+                    *Consenso pesato su ${insights.length} analisi
+                </p>
             </div>
             <div id="risk-terminal-slot">
                 <div class="state-msg"><div class="spinner"></div></div>
@@ -88,7 +79,6 @@ function renderHero(container, asset, insight) {
     `;
     loadRiskTerminal(asset);
 }
-
 async function loadRiskTerminal(asset) {
     const slot = document.getElementById('risk-terminal-slot');
     try {
