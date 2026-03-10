@@ -19,71 +19,58 @@ async function loadAllFeeds() {
             content_feed!inner(*, sources(*)), 
             assets(asset_group)
         `)
+        // 1. Priorità assoluta alla data di pubblicazione (UTC)
         .order('published_at', { foreignTable: 'content_feed', ascending: false })
+        // 2. A parità di data, metti prima le analisi più affidabili (Confidence 10 -> 1)
         .order('confidence', { ascending: false })
+        // 3. Spareggio finale su ID
         .order('id', { ascending: false })
         .limit(1000);
 
     if (error) return console.error(error);
 
-    // 1. AGGREGAZIONE UNICA PER FEED_ID (Evita fusioni di titoli uguali in date diverse)
+    // Aggregazione Ticker per Notizia
     const aggregatedMap = new Map();
     data.forEach(item => {
-        // Usiamo feed_id come chiave: 1 Card = 1 Video o 1 Post di Trump
-        const key = item.feed_id; 
-        
+        const key = item.title; 
         if (!aggregatedMap.has(key)) {
-            aggregatedMap.set(key, { 
-                ...item, 
-                all_groups: [item.assets?.asset_group || ''], 
-                all_tickers: [item.asset_ticker] 
-            });
+            aggregatedMap.set(key, { ...item, all_groups: [item.assets?.asset_group || ''], all_tickers: [item.asset_ticker] });
         } else {
             const existing = aggregatedMap.get(key);
             const newGroup = item.assets?.asset_group || '';
             if (!existing.all_groups.includes(newGroup)) existing.all_groups.push(newGroup);
             if (!existing.all_tickers.includes(item.asset_ticker)) existing.all_tickers.push(item.asset_ticker);
-            
-            // Se per lo stesso video un ticker ha confidence 9 e l'altro 4, 
-            // la card deve mostrare 9 (la più importante)
-            if (item.confidence > existing.confidence) existing.confidence = item.confidence;
         }
     });
 
-    // 2. CONVERSIONE E SORT MANUALE (Sicurezza Finale)
-    // Nonostante l'ordine di Supabase, il sort in JS garantisce che il frontend non faccia scherzi
-    const insights = Array.from(aggregatedMap.values()).sort((a, b) => {
+    const insights = Array.from(aggregatedMap.values());
+
+    // FORZA L'ORDINAMENTO FINALE (Data -> Confidence -> ID)
+    insights.sort((a, b) => {
         const dateA = new Date(a.content_feed.published_at).getTime();
         const dateB = new Date(b.content_feed.published_at).getTime();
 
-        // Criterio 1: Data di pubblicazione (Decrescente)
+        // 1. Ordina per data (Decrescente)
         if (dateB !== dateA) return dateB - dateA;
         
-        // Criterio 2: Confidence (Decrescente)
+        // 2. Se data uguale, ordina per Confidence (Decrescente)
         if (b.confidence !== a.confidence) return b.confidence - a.confidence;
 
-        // Criterio 3: ID (Decrescente)
+        // 3. Spareggio su ID
         return b.id - a.id;
     });
-
+    
     const ora = new Date().getTime();
     const ventiquattroOre = 24 * 60 * 60 * 1000;
     const setteGiorni = 7 * ventiquattroOre;
 
-    // 3. FILTRAGGIO (Sfrutta l'array già ordinato)
-    const breaking = insights.filter(i => 
-        i.insight_type === 'ASSET' && 
-        (ora - new Date(i.content_feed?.published_at).getTime()) <= ventiquattroOre
-    );
-
+    const breaking = insights.filter(i => (i.insight_type === 'ASSET' && (ora - new Date(i.content_feed?.published_at).getTime()) <= ventiquattroOre));
     const weekly = insights.filter(i => {
         const diff = ora - new Date(i.content_feed?.published_at).getTime();
         return diff > ventiquattroOre && diff <= setteGiorni;
     });
-
     const macro = insights.filter(i => i.insight_type === 'MACRO_EVENT');
 
-    // 4. RENDERING
     renderSection('grid-breaking', 'count-breaking', breaking);
     renderSection('grid-weekly', 'count-weekly', weekly);
     renderSection('grid-macro', 'count-macro', macro);
