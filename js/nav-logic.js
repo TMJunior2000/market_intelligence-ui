@@ -148,14 +148,13 @@ function handleLayoutTransition(mode, displayName) {
 
 
 function applyFilter(type, value) {
-    // Selezioniamo tutte le card caricate nelle tre sezioni della dashboard
     const allCards = document.querySelectorAll('#dashboard-view .insight-card');
     const filteredGrid = document.getElementById('filtered-grid');
     const isMainView = (value === 'all');
     
     filteredGrid.innerHTML = '';
-    let count = 0;
-    const addedTitles = new Set(); // Evita duplicati se la stessa notizia è in più sezioni
+    const addedTitles = new Set();
+    const matchedCards = []; // Array temporaneo per le card che passano il filtro
 
     allCards.forEach(card => {
         const cardGroups = (card.dataset.assetGroups || '').split(',');
@@ -166,40 +165,55 @@ function applyFilter(type, value) {
         let isMatch = false;
         
         if (type === 'main') {
-            if (value === 'all') {
-                isMatch = true;
-            } else if (value === 'high-conviction') {
-                isMatch = confidence >= 9;
-            } else if (value === 'macro') {
-                isMatch = (insightType === 'MACRO_EVENT');
-            } else {
+            if (value === 'all') isMatch = true;
+            else if (value === 'high-conviction') isMatch = confidence >= 9;
+            else if (value === 'macro') isMatch = (insightType === 'MACRO_EVENT');
+            else {
                 const allowed = groupMapping[value] || [];
-                // Confronto flessibile: controlla se qualche gruppo della card contiene una delle parole chiave
-                isMatch = cardGroups.some(cg => 
-                    allowed.some(a => cg.toLowerCase().includes(a.toLowerCase()))
-                );
+                isMatch = cardGroups.some(cg => allowed.some(a => cg.toLowerCase().includes(a.toLowerCase())));
             }
         } else if (type === 'sub') {
-            // Per i sottogruppi (es. Metals): controllo se il valore è contenuto nel nome del gruppo
             isMatch = cardGroups.some(cg => cg.toLowerCase().includes(value.toLowerCase()));
         }
 
         if (isMatch && !addedTitles.has(cardTitle)) {
-            if (!isMainView) {
-                const cardClone = card.cloneNode(true);
-                cardClone.style.display = 'flex';
-                filteredGrid.appendChild(cardClone);
-                addedTitles.add(cardTitle);
-                count++;
-            } else {
-                card.style.display = 'flex'; 
-            }
+            matchedCards.push(card); // Aggiungiamo il riferimento della card originale
+            addedTitles.add(cardTitle);
         }
     });
 
+    if (!isMainView) {
+        // --- LOGICA DI ORDINAMENTO AGGIUNTA QUI ---
+        matchedCards.sort((a, b) => {
+            // Estraiamo la data dal footer (assumendo che buildCard metta un timestamp o usiamo quello che abbiamo)
+            // Più sicuro: usiamo l'ID come proxy o, se possibile, aggiungi data-published alle card in buildCard
+            const dateA = new Date(a.querySelector('.card-date')?.textContent || 0).getTime();
+            const dateB = new Date(b.querySelector('.card-date')?.textContent || 0).getTime();
+            const confA = parseInt(a.dataset.confidence) || 0;
+            const confB = parseInt(b.dataset.confidence) || 0;
+
+            // 1. Priorità Data (Decrescente)
+            if (dateB !== dateA) return dateB - dateA;
+            // 2. Priorità Confidence (Decrescente)
+            if (confB !== confA) return confB - confA;
+            // 3. ID (se disponibile nei dataset o ordine naturale)
+            return 0;
+        });
+
+        // Rendering finale delle card ordinate
+        matchedCards.forEach(card => {
+            const cardClone = card.cloneNode(true);
+            cardClone.style.display = 'flex';
+            filteredGrid.appendChild(cardClone);
+        });
+    } else {
+        // Se è la vista "all", mostriamo semplicemente quelle originali
+        allCards.forEach(card => card.style.display = 'flex');
+    }
+
     const countEl = document.getElementById('active-filter-count');
     if (countEl && !isMainView) {
-        countEl.textContent = `${count} insight${count !== 1 ? 's' : ''} trovati`;
+        countEl.textContent = `${matchedCards.length} insight${matchedCards.length !== 1 ? 's' : ''} trovati`;
     }
 }
 

@@ -279,69 +279,57 @@ function renderSentimentRow(label, sentiment) {
 function calculateSmartSentiment(insights) {
     const now = new Date().getTime();
     
-    // Contenitori per i punteggi (total = somma valori, weight = somma confidenza)
-    let scores = {
-        short: { total: 0, weight: 0 },
-        medium: { total: 0, weight: 0 },
-        long: { total: 0, weight: 0 }
+    const scores = {
+        short: { val: 0, w: 0 },
+        medium: { val: 0, w: 0 },
+        long: { val: 0, w: 0 }
     };
 
     insights.forEach(i => {
-        // Calcolo decadimento temporale (Time Decay)
         const pubDate = new Date(i.content_feed?.published_at).getTime();
         const orePassate = (now - pubDate) / (1000 * 60 * 60);
         
-        // Peso temporale: una news di 1 ora fa pesa 1.0, una di 48 ore fa pesa 0.5
-        // Questo evita che analisi vecchie "sporchino" il sentiment attuale
-        const timeDecay = Math.max(0, 1 - (orePassate / 96)); 
+        // Parametri professionali
+        const timeDecay = Math.max(0, 1 - (orePassate / 96)); // 4 giorni di validità
+        const authority = i.insight_type === 'MACRO_EVENT' ? 1.5 : 1.0;
+        const weight = i.confidence * timeDecay * authority;
 
-        // Peso dell'Autorità: i MACRO_EVENT pesano il 20% in più perché muovono tutto il mercato
-        const authorityFactor = i.insight_type === 'MACRO_EVENT' ? 1.2 : 1.0;
-
-        // Moltiplicatore finale: Fiducia * Tempo * Tipo News
-        const finalWeight = i.confidence * timeDecay * authorityFactor;
-
-        // Funzione per mappare il sentiment in valori numerici
-        const mapVal = (s) => {
-            if (s === 'BULLISH') return 1;
-            if (s === 'BEARISH') return -1;
-            return 0; // NEUTRAL o UNKNOWN non spostano il trend ma aumentano la massa critica
+        const getScore = (sentiment) => {
+            if (sentiment === 'BULLISH') return 1;
+            if (sentiment === 'BEARISH') return -1;
+            return 0; // NEUTRAL o UNKNOWN
         };
 
-        // Accumulo SHORT TERM
-        if (i.sentiment_short !== 'UNKNOWN') {
-            scores.short.total += mapVal(i.sentiment_short) * finalWeight;
-            scores.short.weight += finalWeight;
+        // Calcolo SHORT (focus 24h, ignoriamo news vecchie)
+        if (orePassate <= 24 && i.sentiment_short !== 'UNKNOWN') {
+            scores.short.val += getScore(i.sentiment_short) * weight;
+            scores.short.w += weight;
         }
 
-        // Accumulo MEDIUM TERM
+        // Calcolo MEDIUM (focus 7 giorni)
         if (i.sentiment_medium !== 'UNKNOWN') {
-            scores.medium.total += mapVal(i.sentiment_medium) * finalWeight;
-            scores.medium.weight += finalWeight;
+            scores.medium.val += getScore(i.sentiment_medium) * weight;
+            scores.medium.w += weight;
         }
 
-        // Accumulo LONG TERM (Solo se la confidenza è alta, il lungo periodo richiede certezze)
-        if (i.sentiment_long !== 'UNKNOWN' && i.confidence >= 5) {
-            scores.long.total += mapVal(i.sentiment_long) * finalWeight;
-            scores.long.weight += finalWeight;
+        // Calcolo LONG (solo se confidenza alta, ignoriamo il decay temporale)
+        if (i.sentiment_long !== 'UNKNOWN' && i.confidence >= 7) {
+            scores.long.val += getScore(i.sentiment_long) * i.confidence; // Qui il tempo conta meno della qualità
+            scores.long.w += i.confidence;
         }
     });
 
-    // Funzione per convertire il punteggio numerico finale in Etichetta
-    const getFinalLabel = (obj) => {
-        if (obj.weight === 0) return 'UNKNOWN';
-        
-        const finalScore = obj.total / obj.weight; // Media pesata (risultato tra -1 e 1)
-
-        // Threshold (Soglie): 0.15 è la zona di tolleranza per il NEUTRAL
-        if (finalScore > 0.15) return 'BULLISH';
-        if (finalScore < -0.15) return 'BEARISH';
+    const finalize = (obj) => {
+        if (obj.w === 0) return 'UNKNOWN';
+        const ratio = obj.val / obj.w;
+        if (ratio > 0.2) return 'BULLISH';   // Oltre il 20% di sbilanciamento
+        if (ratio < -0.2) return 'BEARISH';
         return 'NEUTRAL';
     };
 
     return {
-        short: getFinalLabel(scores.short),
-        medium: getFinalLabel(scores.medium),
-        long: getFinalLabel(scores.long)
+        short: finalize(scores.short),
+        medium: finalize(scores.medium),
+        long: finalize(scores.long)
     };
 }
