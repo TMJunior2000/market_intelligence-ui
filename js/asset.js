@@ -60,32 +60,30 @@ function renderHero(container, asset, sentimentObj, count) {
     container.innerHTML = `
         <div class="asset-hero-content" style="background: white; padding: 40px; border: 1.5px solid var(--border); border-radius: var(--radius-lg); display: grid; grid-template-columns: 1fr 280px 380px; gap: 40px; align-items: start;">
             <div class="hero-info">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
                     <span class="suggestion-ticker" style="font-size: 14px; background: var(--text-primary); color: white; padding: 4px 10px; border-radius: 4px;">${asset.ticker}</span>
+                    <div id="hero-performance-bar" style="display: flex; gap: 12px; font-family: var(--font-mono); font-size: 11px; font-weight: 800; text-transform: uppercase;">
+                        <span id="perf-today">--</span>
+                        <span id="perf-w" style="opacity: 0.7;">--</span>
+                        <span id="perf-m" style="opacity: 0.7;">--</span>
+                        <span id="perf-six_m" style="opacity: 0.7;">--</span>
+                    </div>
                 </div>
                 <h1 style="font-family: var(--font-display); font-size: 42px; font-weight: 900; margin: 0 0 16px; color: var(--text-primary); line-height: 1.1;">${asset.name_full}</h1>
                 <div class="mt5-specs-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase;">
                     <span class="spec-item"><strong>Prezzo:</strong> <span id="hero-live-price">--</span></span>
-                    <span class="spec-item"><strong>Min Lot:</strong> <span id="hero-live-volmin">--</span></span>
-                    <span class="spec-item"><strong>Max Lot:</strong> <span id="hero-live-volmax">--</span></span>
                     <span class="spec-item"><strong>Spread:</strong> <span id="hero-live-spread">--</span></span>
-                    <span class="spec-item"><strong>Tick Val:</strong> <span id="hero-live-tick">--</span></span>
-                    <span class="spec-item"><strong>Tick Size:</strong> <span id="hero-live-ticksize">--</span></span>
                     <span class="spec-item"><strong>Contract:</strong> <span id="hero-live-contract">--</span></span>
+                    <span class="spec-item"><strong>Tick Val:</strong> <span id="hero-live-tick">--</span></span>
                     <span class="spec-item"><strong>Swap L:</strong> <span id="hero-live-swapl">--</span></span>
                     <span class="spec-item"><strong>Swap S:</strong> <span id="hero-live-swaps">--</span></span>
                 </div>
             </div>
             <div class="sentiment-matrix" style="border-left: 1.5px solid var(--border); padding-left: 30px; display: flex; flex-direction: column; gap: 15px;">
-                <h4 style="font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase;">Market Sentiment</h4>
-                
+                <h4 style="font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase;">Consenso Pesato (${count})</h4>
                 ${renderSentimentRow('Short Term', sentimentObj.short)}
                 ${renderSentimentRow('Medium Term', sentimentObj.medium)}
                 ${renderSentimentRow('Long Term', sentimentObj.long)}
-                
-                <p style="font-size: 9px; color: var(--text-muted); margin-top: 10px; font-family: var(--font-mono);">
-                    *Consenso pesato su ${count} analisi
-                </p>
             </div>
             <div id="risk-terminal-slot">
                 <div class="state-msg"><div class="spinner"></div></div>
@@ -119,27 +117,39 @@ function initTerminalLogic(asset) {
 
 function updateAssetCalculations(mt5Data) {
     const asset = mt5Data.current_asset;
-    const account = mt5Data.account;
-    const trades = mt5Data.trades;
+    if (!asset || !mt5Data.account) return;
 
-    if (!asset || !account) return;
-
-    // Update Hero Labels
+    // Helper per testo semplice
     const updateEl = (id, val) => {
         const el = document.getElementById(id);
         if(el) el.innerText = val;
     };
+
     updateEl('hero-live-price', asset.price);
-    updateEl('hero-live-volmin', asset.volume_min);
-    updateEl('hero-live-volmax', asset.volume_max || '--');
     updateEl('hero-live-spread', asset.spread);
     updateEl('hero-live-tick', asset.tick_value.toFixed(2));
-    updateEl('hero-live-ticksize', asset.tick_size);
     updateEl('hero-live-contract', asset.contract_size);
     updateEl('hero-live-swapl', asset.swap_long);
     updateEl('hero-live-swaps', asset.swap_short);
 
-    runRiskMath(account, asset);
+    // --- AGGIORNAMENTO PERFORMANCE COLORATO ---
+    if (asset.performance) {
+        const setPerf = (id, label, val) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const sign = val >= 0 ? '+' : '';
+            el.innerText = `${label} ${sign}${val}%`;
+            el.style.color = val >= 0 ? 'var(--bullish)' : 'var(--bearish)';
+        };
+
+        setPerf('perf-today', 'Today', asset.performance.today);
+        setPerf('perf-w', '5D', asset.performance.w);
+        setPerf('perf-m', '1M', asset.performance.m);
+        setPerf('perf-six_m', '6M', asset.performance.six_m);
+    }
+
+    // Ricalcola il rischio nel terminale operativo
+    runRiskMath(mt5Data.account, asset);
 }
 
 function runRiskMath(account, asset) {
