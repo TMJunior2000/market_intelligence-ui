@@ -14,7 +14,14 @@ document.addEventListener('componentsReady', async () => {
 async function loadAllFeeds() {
     const { data, error } = await db
         .from('market_insights')
-        .select(`*, content_feed(*, sources(*)), assets(asset_group)`)
+        .select(`
+            *, 
+            content_feed!inner(id, title, url, published_at, sources(*)), 
+            assets(asset_group)
+        `)
+        // 1. Ordina per data di pubblicazione UTC (Tabella content_feed)
+        .order('published_at', { foreignTable: 'content_feed', ascending: false })
+        // 2. Se la data è identica, ordina per ID (Tabella market_insights)
         .order('id', { ascending: false })
         .limit(1000);
 
