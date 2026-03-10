@@ -37,9 +37,9 @@ async function loadAssetData(ticker) {
         });
 
         const asset = insights[0].assets;
-        const lastInsight = insights[0]; 
+        const smartSentiment = calculateSmartSentiment(insights);
 
-        renderHero(hero, asset, lastInsight);
+        renderHero(hero, asset, smartSentiment);
 
         grid.innerHTML = '';
         document.getElementById('asset-count').textContent = `${insights.length} insight${insights.length !== 1 ? 's' : ''}`;
@@ -268,4 +268,74 @@ function renderSentimentRow(label, sentiment) {
             <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: ${color}; background: ${bg}; padding: 4px 12px; border-radius: 4px; min-width: 85px; text-align: center;">${s}</span>
         </div>
     `;
+}
+
+function calculateSmartSentiment(insights) {
+    const now = new Date().getTime();
+    
+    // Contenitori per i punteggi (total = somma valori, weight = somma confidenza)
+    let scores = {
+        short: { total: 0, weight: 0 },
+        medium: { total: 0, weight: 0 },
+        long: { total: 0, weight: 0 }
+    };
+
+    insights.forEach(i => {
+        // Calcolo decadimento temporale (Time Decay)
+        const pubDate = new Date(i.content_feed?.published_at).getTime();
+        const orePassate = (now - pubDate) / (1000 * 60 * 60);
+        
+        // Peso temporale: una news di 1 ora fa pesa 1.0, una di 48 ore fa pesa 0.5
+        // Questo evita che analisi vecchie "sporchino" il sentiment attuale
+        const timeDecay = Math.max(0, 1 - (orePassate / 96)); 
+
+        // Peso dell'Autorità: i MACRO_EVENT pesano il 20% in più perché muovono tutto il mercato
+        const authorityFactor = i.insight_type === 'MACRO_EVENT' ? 1.2 : 1.0;
+
+        // Moltiplicatore finale: Fiducia * Tempo * Tipo News
+        const finalWeight = i.confidence * timeDecay * authorityFactor;
+
+        // Funzione per mappare il sentiment in valori numerici
+        const mapVal = (s) => {
+            if (s === 'BULLISH') return 1;
+            if (s === 'BEARISH') return -1;
+            return 0; // NEUTRAL o UNKNOWN non spostano il trend ma aumentano la massa critica
+        };
+
+        // Accumulo SHORT TERM
+        if (i.sentiment_short !== 'UNKNOWN') {
+            scores.short.total += mapVal(i.sentiment_short) * finalWeight;
+            scores.short.weight += finalWeight;
+        }
+
+        // Accumulo MEDIUM TERM
+        if (i.sentiment_medium !== 'UNKNOWN') {
+            scores.medium.total += mapVal(i.sentiment_medium) * finalWeight;
+            scores.medium.weight += finalWeight;
+        }
+
+        // Accumulo LONG TERM (Solo se la confidenza è alta, il lungo periodo richiede certezze)
+        if (i.sentiment_long !== 'UNKNOWN' && i.confidence >= 5) {
+            scores.long.total += mapVal(i.sentiment_long) * finalWeight;
+            scores.long.weight += finalWeight;
+        }
+    });
+
+    // Funzione per convertire il punteggio numerico finale in Etichetta
+    const getFinalLabel = (obj) => {
+        if (obj.weight === 0) return 'UNKNOWN';
+        
+        const finalScore = obj.total / obj.weight; // Media pesata (risultato tra -1 e 1)
+
+        // Threshold (Soglie): 0.15 è la zona di tolleranza per il NEUTRAL
+        if (finalScore > 0.15) return 'BULLISH';
+        if (finalScore < -0.15) return 'BEARISH';
+        return 'NEUTRAL';
+    };
+
+    return {
+        short: getFinalLabel(scores.short),
+        medium: getFinalLabel(scores.medium),
+        long: getFinalLabel(scores.long)
+    };
 }
