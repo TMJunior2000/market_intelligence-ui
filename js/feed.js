@@ -16,12 +16,14 @@ async function loadAllFeeds() {
         .from('market_insights')
         .select(`
             *, 
-            content_feed!inner(id, title, url, published_at, sources(*)), 
+            content_feed!inner(*, sources(*)), 
             assets(asset_group)
         `)
-        // 1. Ordina per data di pubblicazione UTC (Tabella content_feed)
+        // 1. Priorità assoluta alla data di pubblicazione (UTC)
         .order('published_at', { foreignTable: 'content_feed', ascending: false })
-        // 2. Se la data è identica, ordina per ID (Tabella market_insights)
+        // 2. A parità di data, metti prima le analisi più affidabili (Confidence 10 -> 1)
+        .order('confidence', { ascending: false })
+        // 3. Spareggio finale su ID
         .order('id', { ascending: false })
         .limit(1000);
 
