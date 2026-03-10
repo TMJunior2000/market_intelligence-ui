@@ -152,38 +152,38 @@ function updateAssetCalculations(mt5Data) {
     // --- RENDER FVG CONTEXT ---
     const fvgZone = document.getElementById('hero-fvg-confluences');
     if (fvgZone && asset.fvg_context) {
-        fvgZone.innerHTML = ''; // Reset per live update
+        fvgZone.innerHTML = ''; // Reset
         const fvg = asset.fvg_context;
 
         // 1. SE IL PREZZO E' DENTRO UN FVG
         if (fvg.in_fvg) {
-            const isBullish = fvg.in_fvg.type.includes('BULLISH');
+            const isBullish = fvg.in_fvg.type === 'BULLISH';
             const color = isBullish ? 'var(--bullish)' : 'var(--bearish)';
             const bg = isBullish ? 'var(--bullish-bg)' : 'var(--bearish-bg)';
             
             fvgZone.innerHTML += `
                 <div style="background: ${bg}; color: ${color}; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid ${color}; display: flex; align-items: center; gap: 6px; animation: pulse 2s infinite;">
-                    <i class="fas fa-bolt"></i> PRICE INSIDE H4 FVG [${fvg.in_fvg.top.toFixed(5)} - ${fvg.in_fvg.bottom.toFixed(5)}]
+                    <i class="fas fa-bolt"></i> INSIDE H4 FVG ${fvg.in_fvg.type} | MITIGATO AL ${fvg.in_fvg.mitigated_pct}%
                 </div>
             `;
         }
 
-        // 2. MOSTRA DISTANZA DAL SUPPORTO PIU' VICINO
+        // 2. MOSTRA DISTANZA DAL SUPPORTO PIU' VICINO (Freccia in SU perché ci aspettiamo un rimbalzo Long)
         if (fvg.support && !fvg.in_fvg) {
             const distPoints = ((asset.price - fvg.support.top) / asset.tick_size).toFixed(0);
             fvgZone.innerHTML += `
                 <div title="Supporto FVG Storico Non Mitigato" style="background: var(--bg-subtle); color: var(--text-primary); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid var(--border);">
-                    <i class="fas fa-arrow-down" style="color: var(--bullish);"></i> SUPPORTO FVG a ${distPoints} pts (${fvg.support.top.toFixed(5)})
+                    <i class="fas fa-arrow-up" style="color: var(--bullish);"></i> SUPPORTO FVG a ${distPoints} pts | MITIGATO ${fvg.support.mitigated_pct}%
                 </div>
             `;
         }
 
-        // 3. MOSTRA DISTANZA DALLA RESISTENZA PIU' VICINA
+        // 3. MOSTRA DISTANZA DALLA RESISTENZA PIU' VICINA (Freccia in GIU perché ci aspettiamo un rifiuto Short)
         if (fvg.resistance && !fvg.in_fvg) {
             const distPoints = ((fvg.resistance.bottom - asset.price) / asset.tick_size).toFixed(0);
             fvgZone.innerHTML += `
                 <div title="Resistenza FVG Storica Non Mitigata" style="background: var(--bg-subtle); color: var(--text-primary); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid var(--border);">
-                    <i class="fas fa-arrow-up" style="color: var(--bearish);"></i> RESISTENZA FVG a ${distPoints} pts (${fvg.resistance.bottom.toFixed(5)})
+                    <i class="fas fa-arrow-down" style="color: var(--bearish);"></i> RESISTENZA FVG a ${distPoints} pts | MITIGATO ${fvg.resistance.mitigated_pct}%
                 </div>
             `;
         }
