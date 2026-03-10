@@ -36,11 +36,14 @@ async function loadAllFeeds() {
         if (!aggregatedMap.has(key)) {
             aggregatedMap.set(key, { ...item, all_groups: [item.assets?.asset_group || ''], all_tickers: [item.asset_ticker] });
         } else {
-            const existing = aggregatedMap.get(key);
-            const newGroup = item.assets?.asset_group || '';
-            if (!existing.all_groups.includes(newGroup)) existing.all_groups.push(newGroup);
-            if (!existing.all_tickers.includes(item.asset_ticker)) existing.all_tickers.push(item.asset_ticker);
-        }
+                    const existing = aggregatedMap.get(key);
+                    const newGroup = item.assets?.asset_group || '';
+                    if (!existing.all_groups.includes(newGroup)) existing.all_groups.push(newGroup);
+                    if (!existing.all_tickers.includes(item.asset_ticker)) existing.all_tickers.push(item.asset_ticker);
+                    
+                    // AGGIUNGI QUESTA RIGA: Prendi la confidence maggiore tra i record aggregati
+                    if (item.confidence > existing.confidence) existing.confidence = item.confidence;
+                }
     });
 
     const insights = Array.from(aggregatedMap.values());
@@ -59,7 +62,7 @@ async function loadAllFeeds() {
         // 3. Spareggio su ID
         return b.id - a.id;
     });
-    
+
     const ora = new Date().getTime();
     const ventiquattroOre = 24 * 60 * 60 * 1000;
     const setteGiorni = 7 * ventiquattroOre;

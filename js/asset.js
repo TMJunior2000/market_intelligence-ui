@@ -11,19 +11,30 @@ async function loadAssetData(ticker) {
     hero.innerHTML = '';
 
     try {
-        const { data: insights, error } = await db
+        const { data: rawInsights, error } = await db
             .from('market_insights')
-            .select(`*, assets (*), content_feed (*, sources (*))`)
+            .select(`*, assets (*), content_feed!inner (*, sources (*))`)
             .eq('asset_ticker', ticker)
-            .order('id', { ascending: false });
+            // 1. MODIFICA: Ordina per data pubblicazione (UTC) e poi per Confidence
+            .order('published_at', { foreignTable: 'content_feed', ascending: false })
+            .order('confidence', { ascending: false });
 
         if (error) throw error;
         
-        if (!insights || insights.length === 0) {
+        if (!rawInsights || rawInsights.length === 0) {
             hero.innerHTML = `<div class="state-msg">Nessun dato trovato per ${ticker}.</div>`;
             grid.innerHTML = '';
             return;
         }
+
+        // 2. MODIFICA: Sort manuale per garantire l'ordine esatto anche nel rendering
+        const insights = rawInsights.sort((a, b) => {
+            const dateA = new Date(a.content_feed.published_at).getTime();
+            const dateB = new Date(b.content_feed.published_at).getTime();
+            if (dateB !== dateA) return dateB - dateA;
+            if (b.confidence !== a.confidence) return b.confidence - a.confidence;
+            return b.id - a.id;
+        });
 
         const asset = insights[0].assets;
         const lastInsight = insights[0]; 
