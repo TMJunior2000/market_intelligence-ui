@@ -19,47 +19,55 @@ async function loadAllFeeds() {
             content_feed!inner(*, sources(*)), 
             assets(asset_group)
         `)
-        // 1. Priorità assoluta alla data di pubblicazione (UTC)
         .order('published_at', { foreignTable: 'content_feed', ascending: false })
-        // 2. A parità di data, metti prima le analisi più affidabili (Confidence 10 -> 1)
         .order('confidence', { ascending: false })
-        // 3. Spareggio finale su ID
         .order('id', { ascending: false })
         .limit(1000);
 
     if (error) return console.error(error);
 
-    // Aggregazione Ticker per Notizia
     const aggregatedMap = new Map();
+    
     data.forEach(item => {
         const key = item.title; 
+        
         if (!aggregatedMap.has(key)) {
-            aggregatedMap.set(key, { ...item, all_groups: [item.assets?.asset_group || ''], all_tickers: [item.asset_ticker] });
+            // Primo avvistamento: inizializziamo la card con i dati del primo asset
+            aggregatedMap.set(key, { 
+                ...item, 
+                all_groups: [item.assets?.asset_group || ''], 
+                all_tickers: [item.asset_ticker] 
+            });
         } else {
-                    const existing = aggregatedMap.get(key);
-                    const newGroup = item.assets?.asset_group || '';
-                    if (!existing.all_groups.includes(newGroup)) existing.all_groups.push(newGroup);
-                    if (!existing.all_tickers.includes(item.asset_ticker)) existing.all_tickers.push(item.asset_ticker);
-                    
-                    // AGGIUNGI QUESTA RIGA: Prendi la confidence maggiore tra i record aggregati
-                    if (item.confidence > existing.confidence) existing.confidence = item.confidence;
-                }
+            const existing = aggregatedMap.get(key);
+            const newGroup = item.assets?.asset_group || '';
+            
+            // 1. Aggreghiamo i badge (Ticker e Gruppi)
+            if (!existing.all_groups.includes(newGroup)) existing.all_groups.push(newGroup);
+            if (!existing.all_tickers.includes(item.asset_ticker)) existing.all_tickers.push(item.asset_ticker);
+            
+            // 2. GOLDEN RULE: Se questo asset ha una confidenza maggiore, 
+            // sovrascriviamo il sentiment della card con quello più affidabile.
+            if (item.confidence > existing.confidence) {
+                existing.confidence = item.confidence;
+                existing.sentiment_short = item.sentiment_short;
+                existing.sentiment_medium = item.sentiment_medium;
+                existing.sentiment_long = item.sentiment_long;
+                // Opzionale: aggiorniamo l'ID per lo spareggio nel sort finale
+                existing.id = item.id; 
+            }
+        }
     });
 
     const insights = Array.from(aggregatedMap.values());
 
-    // FORZA L'ORDINAMENTO FINALE (Data -> Confidence -> ID)
+    // Ordinamento finale per garantire la gerarchia visiva
     insights.sort((a, b) => {
         const dateA = new Date(a.content_feed.published_at).getTime();
         const dateB = new Date(b.content_feed.published_at).getTime();
 
-        // 1. Ordina per data (Decrescente)
         if (dateB !== dateA) return dateB - dateA;
-        
-        // 2. Se data uguale, ordina per Confidence (Decrescente)
         if (b.confidence !== a.confidence) return b.confidence - a.confidence;
-
-        // 3. Spareggio su ID
         return b.id - a.id;
     });
 
@@ -67,11 +75,14 @@ async function loadAllFeeds() {
     const ventiquattroOre = 24 * 60 * 60 * 1000;
     const setteGiorni = 7 * ventiquattroOre;
 
+    // Filtri per sezione
     const breaking = insights.filter(i => (i.insight_type === 'ASSET' && (ora - new Date(i.content_feed?.published_at).getTime()) <= ventiquattroOre));
+    
     const weekly = insights.filter(i => {
         const diff = ora - new Date(i.content_feed?.published_at).getTime();
-        return diff > ventiquattroOre && diff <= setteGiorni;
+        return i.insight_type === 'ASSET' && diff > ventiquattroOre && diff <= setteGiorni;
     });
+
     const macro = insights.filter(i => i.insight_type === 'MACRO_EVENT');
 
     renderSection('grid-breaking', 'count-breaking', breaking);
