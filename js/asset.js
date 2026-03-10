@@ -39,7 +39,7 @@ async function loadAssetData(ticker) {
         const asset = insights[0].assets;
         const smartSentiment = calculateSmartSentiment(insights);
 
-        renderHero(hero, asset, smartSentiment);
+        renderHero(hero, asset, smartSentiment, insights.length);
 
         grid.innerHTML = '';
         document.getElementById('asset-count').textContent = `${insights.length} insight${insights.length !== 1 ? 's' : ''}`;
